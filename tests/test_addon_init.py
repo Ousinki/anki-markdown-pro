@@ -2,6 +2,7 @@ import importlib.util
 import json
 import sys
 import types
+from html.parser import HTMLParser
 from pathlib import Path
 
 import pytest
@@ -159,6 +160,26 @@ class FakeBackend:
                 "tmpls": [{"name": "Cloze", "qfmt": "stock-front", "afmt": "stock-back"}],
             }
         )
+
+
+class Script(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.key = None
+        self.data = {}
+
+    def handle_starttag(self, tag, attrs):
+        attr = dict(attrs)
+        if tag == "script" and attr.get("type") == "text/plain" and attr.get("id"):
+            self.key = attr["id"]
+
+    def handle_data(self, data):
+        if self.key:
+            self.data[self.key] = self.data.get(self.key, "") + data
+
+    def handle_endtag(self, tag):
+        if tag == "script":
+            self.key = None
 
 
 @pytest.fixture
@@ -367,6 +388,25 @@ class TestEnsureClozeNotetype:
         assert model["tmpls"][0]["afmt"].endswith("<div>cloze-back</div>")
         assert [f["name"] for f in model["flds"]] == ["Text", "Extra"]
         assert all(f["plainText"] is True for f in model["flds"])
+
+
+class TestTemplates:
+    def test_raw_scripts_preserve_field_indentation(self):
+        sample = "1. Parent\n   - Child"
+        cases = {
+            "front.html": {"data-front": "{{Front}}", "data-back": "{{Back}}"},
+            "back.html": {"data-front": "{{Front}}", "data-back": "{{Back}}"},
+            "cloze-front.html": {"data-text": "{{Text}}", "data-extra": "{{Extra}}"},
+            "cloze-back.html": {"data-text": "{{Text}}", "data-extra": "{{Extra}}"},
+        }
+
+        for file, ids in cases.items():
+            text = (PKG / "templates" / file).read_text(encoding="utf-8")
+            for key, token in ids.items():
+                script = Script()
+                script.feed(text.replace(token, sample))
+
+                assert script.data[key] == sample
 
 
 class TestSyncMedia:
