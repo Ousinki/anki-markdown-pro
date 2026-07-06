@@ -6,7 +6,9 @@
 <!-- Anki requires {{cloze:Text}} in the template to generate cards per cloze number.
      Hidden because we render cloze ourselves in JS from the raw {{Text}} field below. -->
 <div style="display: none">{{cloze:Text}}</div>
+<!-- prettier-ignore -->
 <script id="data-text" type="text/plain">{{Text}}</script>
+<!-- prettier-ignore -->
 <script id="data-extra" type="text/plain">{{Extra}}</script>
 <script type="module">
   import { renderCloze } from "./_review.js";
