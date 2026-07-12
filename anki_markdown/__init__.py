@@ -21,7 +21,12 @@ MENU = "Anki Markdown Pro"
 
 def is_anki_markdown(notetype) -> bool:
     """Check if a note type is any Anki Markdown Pro variant."""
-    return notetype and notetype["name"] in (NOTETYPE, NOTETYPE_CLOZE)
+    return notetype and notetype["name"] in (
+        NOTETYPE, 
+        NOTETYPE_CLOZE, 
+        "Anki Markdown", 
+        "Anki Markdown Cloze"
+    )
 
 
 def read(name: str) -> str:
