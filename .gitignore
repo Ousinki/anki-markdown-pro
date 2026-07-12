@@ -18,3 +18,7 @@ node_modules
 __pycache__/
 .venv/
 .pytest_cache/
+
+# Local docs (not for GitHub)
+PROJECT_SUMMARY.md
+TECHNICAL_NOTES.md

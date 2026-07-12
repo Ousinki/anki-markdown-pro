@@ -1,6 +1,7 @@
 import "./style.css";
 import mark from "markdown-it-mark";
 import alerts from "markdown-it-github-alerts";
+
 import { createMarkdownExit } from "markdown-exit";
 import { createHighlighterCore } from "@shikijs/core";
 import { createJavaScriptRegexEngine } from "@shikijs/engine-javascript";
@@ -219,7 +220,42 @@ function highlight(code: string, name: string, meta?: string) {
 const md = createMarkdownExit({ html: true });
 md.use(mark as never);
 md.use(alerts as never);
+
 const ready = initHighlighter().then((value) => (highlighter = value));
+
+/**
+ * Render text through markdown while preserving LaTeX math.
+ * Strategy: extract math blocks into a stash with unique placeholders,
+ * run markdown on the remaining text, then restore native MathJax delimiters.
+ * Uses \(...\) for inline and \[...\] for display math — these are what
+ * MathJax.typesetPromise() actually processes at runtime.
+ */
+function renderWithLatex(text: string): string {
+  const stash: string[] = [];
+  const token = (i: number) => `\u0002ANKI_MATH_${i}\u0003`;
+
+  // 1. Block math $$...$$ (greedy-protect first so $$ isn't split by inline rule)
+  let t = text.replace(/\$\$([\s\S]+?)\$\$/g, (_, math) => {
+    const i = stash.length;
+    stash.push(`\\[${math.trim()}\\]`);
+    return token(i);
+  });
+
+  // 2. Inline math $...$ (single dollar, not adjacent to another $)
+  t = t.replace(/(?<!\$)\$([^\$\n]+?)\$(?!\$)/g, (_, math) => {
+    const i = stash.length;
+    stash.push(`\\(${math.trim()}\\)`);
+    return token(i);
+  });
+
+  // 3. Run markdown on safe text
+  let html = md.render(t);
+
+  // 4. Restore native MathJax delimiters (placeholders survive markdown untouched)
+  html = html.replace(/\u0002ANKI_MATH_(\d+)\u0003/g, (_, i) => stash[parseInt(i)]);
+
+  return html;
+}
 
 // Only allow safe HTML tags, strip everything else
 const ALLOWED = /^<\/?(img|a|b|i|em|strong|br|kbd)(\s[^>]*)?>$/i;
@@ -389,14 +425,18 @@ export async function render(front: string, back: string) {
   wrapper?.setAttribute("data-state", "loading");
   if (config.cardless) wrapper?.classList.add("cardless");
 
-  if (frontEl) frontEl.innerHTML = md.render(decode(front));
-  if (backEl) backEl.innerHTML = md.render(decode(back));
+  if (frontEl) frontEl.innerHTML = renderWithLatex(decode(front));
+  if (backEl) backEl.innerHTML = renderWithLatex(decode(back));
   wrapper?.classList.add("ready");
+  // @ts-ignore
+  if (typeof MathJax !== "undefined" && MathJax.typesetPromise) MathJax.typesetPromise();
 
   await upgradeHighlighter(frontEl, backEl);
 
   wrapper?.setAttribute("data-state", "ready");
   wrapper?.classList.add("ready");
+  // @ts-ignore
+  if (typeof MathJax !== "undefined" && MathJax.typesetPromise) MathJax.typesetPromise();
 }
 
 /** Render cloze deletion card to DOM. */
@@ -412,14 +452,18 @@ export async function renderCloze(text: string, extra: string, ordinal: number, 
   if (config.cardless) wrapper?.classList.add("cardless");
 
   const processed = processCloze(raw, ordinal, side);
-  if (frontEl) frontEl.innerHTML = postProcessCloze(md.render(processed));
+  if (frontEl) frontEl.innerHTML = postProcessCloze(renderWithLatex(processed));
 
   const extraText = decode(extra);
-  if (backEl && extraText.trim()) backEl.innerHTML = md.render(extraText);
+  if (backEl && extraText.trim()) backEl.innerHTML = renderWithLatex(extraText);
 
   wrapper?.classList.add("ready");
+  // @ts-ignore
+  if (typeof MathJax !== "undefined" && MathJax.typesetPromise) MathJax.typesetPromise();
   await upgradeHighlighter(frontEl, backEl);
 
   wrapper?.setAttribute("data-state", "ready");
   wrapper?.classList.add("ready");
+  // @ts-ignore
+  if (typeof MathJax !== "undefined" && MathJax.typesetPromise) MathJax.typesetPromise();
 }

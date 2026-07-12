@@ -1,8 +1,14 @@
 import { defineConfig } from "vite";
+import path from "path";
 
 const target = process.env.BUILD_TARGET || "all";
 
 const renderer = defineConfig({
+  resolve: {
+    alias: {
+      katex: path.resolve(__dirname, 'src/dummy-katex.ts')
+    }
+  },
   build: {
     lib: {
       entry: "src/render.ts",
@@ -26,6 +32,11 @@ const renderer = defineConfig({
 });
 
 const editor = defineConfig({
+  resolve: {
+    alias: {
+      katex: path.resolve(__dirname, 'src/dummy-katex.ts')
+    }
+  },
   build: {
     lib: {
       entry: "src/editor.ts",

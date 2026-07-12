@@ -54,6 +54,17 @@ def html_to_markdown(content: str) -> str:
     text = re.sub(
         r"<(i|em)>(.*?)</\1>", r"*\2*", text, flags=re.DOTALL | re.IGNORECASE
     )
+    # Convert Anki's native <anki-mathjax> tags to dollar-sign syntax
+    # Block math: <anki-mathjax block="true">...</anki-mathjax> → $$...$$
+    text = re.sub(
+        r'<anki-mathjax\s+block="true">(.*?)</anki-mathjax>',
+        r"$$\1$$", text, flags=re.DOTALL | re.IGNORECASE
+    )
+    # Inline math: <anki-mathjax>(.*?)</anki-mathjax> → $...$
+    text = re.sub(
+        r"<anki-mathjax>(.*?)</anki-mathjax>",
+        r"$\1$", text, flags=re.DOTALL | re.IGNORECASE
+    )
     text = re.sub(r"<br\s*/?>", "\n", text, flags=re.IGNORECASE)
     return text
 

@@ -22,7 +22,7 @@ const { lifecycle, instances: plainTexts } = require("anki/PlainTextInput") as {
 const active = () => document.body.classList.contains("anki-md-active");
 
 // Editor settings to force-disable for markdown notes
-const settings = ["setCloseHTMLTags", "setShrinkImages", "setMathjaxEnabled"];
+const settings = ["setCloseHTMLTags", "setShrinkImages"];
 
 // Get boolean array matching field count
 const fields = async (val: boolean) => (await instances[0]?.fields)?.map(() => val);
