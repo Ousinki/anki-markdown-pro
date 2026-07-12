@@ -1,8 +1,5 @@
 import "./style.css";
-import mark from "markdown-it-mark";
-import alerts from "markdown-it-github-alerts";
-
-import { createMarkdownExit } from "markdown-exit";
+import { md, renderWithLatex } from "./markdown-core";
 import { createHighlighterCore } from "@shikijs/core";
 import { createJavaScriptRegexEngine } from "@shikijs/engine-javascript";
 import type { HighlighterCore } from "@shikijs/core";
@@ -217,51 +214,7 @@ function highlight(code: string, name: string, meta?: string) {
   }
 }
 
-const md = createMarkdownExit({ html: true });
-md.use(mark as never);
-md.use(alerts as never);
-
 const ready = initHighlighter().then((value) => (highlighter = value));
-
-/**
- * Render text through markdown while preserving LaTeX math.
- * Strategy: extract math blocks into a stash with unique placeholders,
- * run markdown on the remaining text, then restore native MathJax delimiters.
- * Uses \(...\) for inline and \[...\] for display math — these are what
- * MathJax.typesetPromise() actually processes at runtime.
- */
-function renderWithLatex(text: string): string {
-  const stash: string[] = [];
-  const token = (i: number) => `\u0002ANKI_MATH_${i}\u0003`;
-
-  // 1. Block math $$...$$ (greedy-protect first so $$ isn't split by inline rule)
-  let t = text.replace(/\$\$([\s\S]+?)\$\$/g, (_, math) => {
-    const i = stash.length;
-    stash.push(`\\[${math.trim()}\\]`);
-    return token(i);
-  });
-
-  // 2. Inline math $...$ (single dollar, not adjacent to another $)
-  t = t.replace(/(?<!\$)\$([^\$\n]+?)\$(?!\$)/g, (_, math) => {
-    const i = stash.length;
-    stash.push(`\\(${math.trim()}\\)`);
-    return token(i);
-  });
-
-  // 3. Run markdown on safe text
-  let html = md.render(t);
-
-  // 4. Restore native MathJax delimiters (placeholders survive markdown untouched)
-  html = html.replace(/\u0002ANKI_MATH_(\d+)\u0003/g, (_, i) => stash[parseInt(i)]);
-
-  return html;
-}
-
-// Only allow safe HTML tags, strip everything else
-const ALLOWED = /^<\/?(img|a|b|i|em|strong|br|kbd)(\s[^>]*)?>$/i;
-const sanitize = (html: string) => (ALLOWED.test(html.trim()) ? html : "");
-md.renderer.rules.html_inline = (tokens, idx) => sanitize(tokens[idx].content);
-md.renderer.rules.html_block = (tokens, idx) => sanitize(tokens[idx].content);
 md.renderer.rules.fence = (tokens, idx) => {
   const { content, info } = tokens[idx];
   const [lang, ...rest] = info.split(/\s+/);
