@@ -81,6 +81,17 @@
 }
 
 .night-mode .anki-md-preview {
+  --_fg: #fcfcfc;
+  --_fg-subtle: #858585;
+  --_border: rgb(255 255 255 / 0.12);
+  --_bg: #363636;
+  --_bg-inset: rgb(255 255 255 / 0.05);
+  --_shadow-code: 0 1px 3px 0 rgb(0 0 0 / 0.2), 0 1px 2px -1px rgb(0 0 0 / 0.2);
+  --_color-note: #318aff;
+  --_color-tip: #19be56;
+  --_color-important: #965bfb;
+  --_color-warning: #dc9703;
+  --_color-caution: #dc2626;
   background: #363636;
   color: #fcfcfc;
 }
