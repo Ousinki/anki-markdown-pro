@@ -1,6 +1,6 @@
-# Anki Markdown
+# Anki Markdown Pro
 
-Reference for writing cards with Anki Markdown.
+Reference for writing cards with Anki Markdown Pro.
 
 This document covers supported markdown syntax, code highlighting, and card formatting features. For installation and development workflow, see `readme.md`.
 
@@ -59,7 +59,7 @@ Press <kbd>Ctrl</kbd>+<kbd>C</kbd> to copy
 
 ## Cloze Deletions
 
-Cloze deletions create fill-in-the-blank cards. Use the **Anki Markdown Cloze** note type with `Text` and `Extra` fields.
+Cloze deletions create fill-in-the-blank cards. Use the **Anki Markdown Pro Cloze** note type with `Text` and `Extra` fields.
 
 ### Syntax
 
@@ -282,7 +282,7 @@ Five types: `NOTE` (blue), `TIP` (green), `IMPORTANT` (purple), `WARNING` (yello
 
 ## Settings
 
-Configure syntax highlighting languages and themes via **Tools → Add-ons → Anki Markdown → Config**.
+Configure syntax highlighting languages and themes via **Tools → Add-ons → Anki Markdown Pro → Config**.
 
 ### Languages
 
@@ -320,7 +320,7 @@ Files are only downloaded once and cached locally.
 
 ## AI Agents
 
-Anki Markdown works well with AI tools because the note fields are plain markdown. When using an agent, write markdown in the `Front` and `Back` fields (or `Text` and `Extra` for cloze) and use fenced code blocks with language tags when needed.
+Anki Markdown Pro works well with AI tools because the note fields are plain markdown. When using an agent, write markdown in the `Front` and `Back` fields (or `Text` and `Extra` for cloze) and use fenced code blocks with language tags when needed.
 
 This works well with MCP-based Anki tools such as [anki-mcp-server](https://github.com/nailuoGG/anki-mcp-server).
 

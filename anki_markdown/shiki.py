@@ -1,4 +1,4 @@
-"""Shiki language and theme management for Anki Markdown.
+"""Shiki language and theme management for Anki Markdown Pro.
 
 Downloads language grammars and themes from esm.sh and manages them
 in collection.media for mobile sync.

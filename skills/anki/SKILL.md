@@ -36,7 +36,7 @@ For potentially destructive or irreversible actions:
 
 ## Guidelines
 
-- **MUST** use the `Anki Markdown` note type for basic cards or `Anki Markdown Cloze` for cloze deletions
+- **MUST** use the `Anki Markdown Pro` note type for basic cards or `Anki Markdown Pro Cloze` for cloze deletions
 - Use markdown for both front and back fields
 - Test exactly one fact or idea per card
 - Make questions atomic and simple
@@ -53,12 +53,12 @@ For potentially destructive or irreversible actions:
 
 ## Choosing Card Type
 
-Use **Anki Markdown** (Front/Back) for question-answer pairs where you write a specific question.
-Use **Anki Markdown Cloze** (Text/Extra) for fill-in-the-blank cards where hiding parts of a statement is more natural than writing a question.
+Use **Anki Markdown Pro** (Front/Back) for question-answer pairs where you write a specific question.
+Use **Anki Markdown Pro Cloze** (Text/Extra) for fill-in-the-blank cards where hiding parts of a statement is more natural than writing a question.
 
 ## Cloze Cards
 
-Use `Anki Markdown Cloze` for fill-in-the-blank cards. Fields are `Text` and `Extra`.
+Use `Anki Markdown Pro Cloze` for fill-in-the-blank cards. Fields are `Text` and `Extra`.
 
 ### Syntax
 
@@ -114,13 +114,13 @@ The `Extra` field appears on the back of every card. Use it for context, example
 
 ```bash
 # Basic cloze
-$ANKI add "MyDeck" "Anki Markdown Cloze" '{"Text":"The {{c1::CPU}} executes {{c2::instructions}}.","Extra":"Basic computer architecture."}' --tags "cs"
+$ANKI add "MyDeck" "Anki Markdown Pro Cloze" '{"Text":"The {{c1::CPU}} executes {{c2::instructions}}.","Extra":"Basic computer architecture."}' --tags "cs"
 
 # Cloze with hint
-$ANKI add "MyDeck" "Anki Markdown Cloze" '{"Text":"{{c1::JavaScript::language}} was created in {{c2::1995::year}}.","Extra":"Created by Brendan Eich."}' --tags "history"
+$ANKI add "MyDeck" "Anki Markdown Pro Cloze" '{"Text":"{{c1::JavaScript::language}} was created in {{c2::1995::year}}.","Extra":"Created by Brendan Eich."}' --tags "history"
 
 # Cloze with blur
-$ANKI add "MyDeck" "Anki Markdown Cloze" '{"Text":"The speed of light is {{c1::299,792,458 m/s::blur}}.","Extra":"Often approximated as 3 x 10^8 m/s."}' --tags "physics"
+$ANKI add "MyDeck" "Anki Markdown Pro Cloze" '{"Text":"The speed of light is {{c1::299,792,458 m/s::blur}}.","Extra":"Often approximated as 3 x 10^8 m/s."}' --tags "physics"
 ```
 
 ## Front Field Format
@@ -206,11 +206,11 @@ Run via `$ANKI <action> [args...]`:
 | `sync`     | Trigger AnkiWeb sync | `$ANKI sync`                                                                    |
 | `decks`    | List decks           | `$ANKI decks --stats`                                                           |
 | `models`   | List note types      | `$ANKI models`                                                                  |
-| `fields`   | Fields for a model   | `$ANKI fields "Anki Markdown"`                                                  |
+| `fields`   | Fields for a model   | `$ANKI fields "Anki Markdown Pro"`                                                  |
 | `find`     | Search notes         | `$ANKI find "deck:Spanish tag:verb"`                                            |
 | `info`     | Note details         | `$ANKI info 1234 5678`                                                          |
-| `add`      | Add one note         | `$ANKI add "My Deck" "Anki Markdown" '{"Front":"Q","Back":"A"}' --tags "t1 t2"` |
-| `add-bulk` | Add many notes       | `$ANKI add-bulk "My Deck" "Anki Markdown" '[{"Front":"Q1","Back":"A1"}]'`       |
+| `add`      | Add one note         | `$ANKI add "My Deck" "Anki Markdown Pro" '{"Front":"Q","Back":"A"}' --tags "t1 t2"` |
+| `add-bulk` | Add many notes       | `$ANKI add-bulk "My Deck" "Anki Markdown Pro" '[{"Front":"Q1","Back":"A1"}]'`       |
 | `update`   | Update fields        | `$ANKI update 1234 '{"Front":"New Q"}'`                                         |
 | `delete`   | Delete notes         | `$ANKI delete 1234 5678`                                                        |
 | `due`      | Get due cards        | `$ANKI due "My Deck" --limit 5`                                                 |
@@ -224,8 +224,8 @@ Run via `$ANKI <action> [args...]`:
 $ANKI sync                          # sync first
 $ANKI decks                         # check available decks
 $ANKI models                        # verify required model exists
-$ANKI fields "Anki Markdown"        # verify field names for selected model
+$ANKI fields "Anki Markdown Pro"        # verify field names for selected model
 $ANKI find "deck:MyDeck front:test" # check for duplicates
-$ANKI add "MyDeck" "Anki Markdown" '{"Front":"...","Back":"..."}'
+$ANKI add "MyDeck" "Anki Markdown Pro" '{"Front":"...","Back":"..."}'
 $ANKI sync                          # sync after changes
 ```

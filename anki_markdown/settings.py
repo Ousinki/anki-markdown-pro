@@ -1,4 +1,4 @@
-"""Settings dialog for Anki Markdown syntax highlighting configuration."""
+"""Settings dialog for Anki Markdown Pro syntax highlighting configuration."""
 
 import json
 from pathlib import Path
@@ -85,7 +85,7 @@ def debug_report() -> str:
     config = get_config()
     theme = config.get("themes", {})
     lines = [
-        "Anki Markdown debug info",
+        "Anki Markdown Pro debug info",
         f"anki_markdown: {ADDON_VERSION}",
         f"anki: {anki_ver()}",
         f"python: {platform.python_implementation()} {platform.python_version()}",
@@ -104,7 +104,7 @@ class ShikiSettingsDialog(QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent or mw)
-        self.setWindowTitle("Anki Markdown - Syntax Highlighting")
+        self.setWindowTitle("Anki Markdown Pro - Syntax Highlighting")
         self.setMinimumWidth(400)
         self.setMinimumHeight(500)
         self.setStyleSheet(
@@ -208,7 +208,7 @@ class ShikiSettingsDialog(QDialog):
         layout.addWidget(ui)
 
         meta = QHBoxLayout()
-        version = QLabel(f"Anki Markdown {ADDON_VERSION} · Shiki {SHIKI_VERSION}")
+        version = QLabel(f"Anki Markdown Pro {ADDON_VERSION} · Shiki {SHIKI_VERSION}")
         version.setStyleSheet("color: gray; font-size: 11px;")
         meta.addWidget(version)
         meta.addStretch()
@@ -299,7 +299,7 @@ class ShikiSettingsDialog(QDialog):
     def export_debug(self):
         """Copy issue-report debug info to the clipboard."""
         QApplication.clipboard().setText(debug_report())
-        QMessageBox.information(self, "Anki Markdown", "Debug info copied to clipboard.")
+        QMessageBox.information(self, "Anki Markdown Pro", "Debug info copied to clipboard.")
 
     def apply_config(self):
         """Save config and download missing files."""

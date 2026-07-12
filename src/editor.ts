@@ -1,4 +1,4 @@
-// Editor integration for Anki Markdown note types.
+// Editor integration for Anki Markdown Pro note types.
 // Forces plain-text mode and disables HTML syntax highlighting.
 import "./editor.css";
 

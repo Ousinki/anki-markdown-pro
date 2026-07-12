@@ -1,4 +1,4 @@
-# Anki Markdown
+# Anki Markdown Pro
 
 > Anki add-on for Markdown notes with syntax highlighting powered by [Shiki](https://shiki.style)
 
@@ -7,7 +7,7 @@ Write flashcards in Markdown with full [syntax highlighting](docs.md#code-blocks
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="media/back-dark.png">
-    <img src="media/back.png" alt="Anki Markdown card example" width="800">
+    <img src="media/back.png" alt="Anki Markdown Pro card example" width="800">
   </picture>
 </p>
 
@@ -27,7 +27,7 @@ Write flashcards in Markdown with full [syntax highlighting](docs.md#code-blocks
 
 After installing the add-on:
 
-1. **Create a new note** using the **Anki Markdown** note type (Add → Note Type dropdown → Anki Markdown)
+1. **Create a new note** using the **Anki Markdown Pro** note type (Add → Note Type dropdown → Anki Markdown Pro)
 2. **Write your question** in the Front field using markdown
 3. **Write your answer** in the Back field using markdown
 4. The markdown will be automatically rendered with syntax highlighting when you review the card
@@ -49,7 +49,7 @@ npx skills add terkelg/anki-markdown -s anki
 
 ## Settings
 
-Open the settings panel from `Tools → Add-ons → Anki Markdown → Config`.
+Open the settings panel from `Tools → Add-ons → Anki Markdown Pro → Config`.
 
 - **Languages** — pick which languages are available for syntax highlighting. New languages are downloaded on save. Use the filter and "Selected only" toggle to manage your list.
 - **Theme** — choose separate Shiki themes for light and dark mode.

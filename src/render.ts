@@ -179,7 +179,7 @@ function warn(name: string) {
   if (!name || name === "text" || warned.has(name)) return;
   warned.add(name);
   console.log(
-    `[anki-md] Language not loaded: ${name}. Falling back to plain text. Open Anki Markdown settings to enable and download it.`,
+    `[anki-md] Language not loaded: ${name}. Falling back to plain text. Open Anki Markdown Pro settings to enable and download it.`,
   );
 }
 

@@ -14,13 +14,13 @@ from .shiki import store, get_config, generate_config_json
 from .settings import show_settings
 
 ADDON_DIR = Path(__file__).parent
-NOTETYPE = "Anki Markdown"
-NOTETYPE_CLOZE = "Anki Markdown Cloze"
-MENU = "Anki Markdown"
+NOTETYPE = "Anki Markdown Pro"
+NOTETYPE_CLOZE = "Anki Markdown Pro Cloze"
+MENU = "Anki Markdown Pro"
 
 
 def is_anki_markdown(notetype) -> bool:
-    """Check if a note type is any Anki Markdown variant."""
+    """Check if a note type is any Anki Markdown Pro variant."""
     return notetype and notetype["name"] in (NOTETYPE, NOTETYPE_CLOZE)
 
 
@@ -69,7 +69,7 @@ def on_profile_loaded():
         details = "\n".join(f"- {err}" for err in errors)
         QMessageBox.warning(
             mw,
-            "Anki Markdown",
+            "Anki Markdown Pro",
             "Failed to download some syntax highlighting files.\n"
             "Open the add-on settings to retry.\n\n"
             f"{details}",
@@ -233,7 +233,7 @@ def on_webview_set_content(content: WebContent, context):
 
 
 def on_editor_load_note(editor: Editor):
-    """Notify JS when Anki Markdown note is loaded."""
+    """Notify JS when Anki Markdown Pro note is loaded."""
     if not editor.note:
         return
     if is_anki_markdown(editor.note.note_type()):
@@ -269,7 +269,7 @@ def _inject_paste_handler(editor: Editor):
                              "image/webp", "image/svg+xml", "image/bmp"];
 
         document.addEventListener("paste", function(e) {
-            // Only intercept when Anki Markdown note is active
+            // Only intercept when Anki Markdown Pro note is active
             if (!window.__ankiMdPasteActive) return;
 
             var items = Array.from(e.clipboardData && e.clipboardData.items ? e.clipboardData.items : []);

@@ -12,6 +12,6 @@ See the [documentation](https://github.com/terkelg/anki-markdown/blob/main/docs.
 
 **Found a bug?** This add-on is actively maintained. Please report issues on [GitHub](https://github.com/terkelg/anki-markdown/issues) with your Anki version and debug info.
 
-![Anki Markdown card example](https://raw.githubusercontent.com/terkelg/anki-markdown/main/media/back.png)
+![Anki Markdown Pro card example](https://raw.githubusercontent.com/terkelg/anki-markdown/main/media/back.png)
 
 [GitHub Repository](https://github.com/terkelg/anki-markdown)
