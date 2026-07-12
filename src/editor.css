@@ -24,6 +24,21 @@
   flex-grow: 0 !important;
 }
 
+/* Suppress blue focus outline when preview overlay is visible */
+.anki-md-active .plain-text-input.preview-active,
+.anki-md-active .editor-field:has(.preview-active) {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+
+.anki-md-active .plain-text-input.preview-active .CodeMirror,
+.anki-md-active .editor-field:has(.preview-active) .CodeMirror {
+  border-color: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 /* ── Preview overlay positioning ──────────────────────────────────────────── */
 
 .anki-md-active .plain-text-input {
