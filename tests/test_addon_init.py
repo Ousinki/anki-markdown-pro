@@ -284,8 +284,8 @@ class TestOnMungeHtml:
         assert addon.mod.on_munge_html(txt, FakeEditor()) == txt
         assert addon.mod.on_munge_html(txt, FakeEditor(FakeNote(None))) == txt
         assert addon.mod.on_munge_html(txt, FakeEditor(FakeNote("Basic"))) == txt
-        assert addon.mod.on_munge_html(txt, FakeEditor(FakeNote("Anki Markdown Pro"))) == "**x**"
-        assert addon.mod.on_munge_html(txt, FakeEditor(FakeNote("Anki Markdown Pro Cloze"))) == "**x**"
+        assert addon.mod.on_munge_html(txt, FakeEditor(FakeNote("MD"))) == "**x**"
+        assert addon.mod.on_munge_html(txt, FakeEditor(FakeNote("MD Cloze"))) == "**x**"
 
 
 class TestEnsureNotetype:
@@ -294,7 +294,7 @@ class TestEnsureNotetype:
             "tmpls": [{"qfmt": "old-front", "afmt": "old-back"}],
             "flds": [{"name": "Front"}, {"name": "Back", "plainText": False}],
         }
-        addon.models.models["Anki Markdown Pro"] = model
+        addon.models.models["MD"] = model
 
         addon.mod.ensure_notetype()
 
@@ -308,7 +308,7 @@ class TestEnsureNotetype:
 
         assert len(addon.models.added) == 1
         model = addon.models.added[0]
-        assert model["name"] == "Anki Markdown Pro"
+        assert model["name"] == "MD"
         assert [field["name"] for field in model["flds"]] == ["Front", "Back"]
         assert all(field["plainText"] is True for field in model["flds"])
         assert model["tmpls"][0]["name"] == "Default"
@@ -323,7 +323,7 @@ class TestEnsureClozeNotetype:
 
         assert len(addon.models.added) == 1
         model = addon.models.added[0]
-        assert model["name"] == "Anki Markdown Pro Cloze"
+        assert model["name"] == "MD Cloze"
         assert model["type"] == 1
         assert [f["name"] for f in model["flds"]] == ["Text", "Extra"]
         assert all(f["plainText"] is True for f in model["flds"])
@@ -332,7 +332,7 @@ class TestEnsureClozeNotetype:
         assert model["tmpls"][0]["afmt"].endswith("<div>cloze-back</div>")
         assert model["css"] == addon.mod.DEFAULT_CSS
         assert addon.backend.calls == ["cloze"]
-        assert "Anki Markdown Pro Cloze" not in addon.models.newed
+        assert "MD Cloze" not in addon.models.newed
 
     def test_updates_existing_cloze_model(self, addon):
         model = {
@@ -340,7 +340,7 @@ class TestEnsureClozeNotetype:
             "tmpls": [{"qfmt": "old", "afmt": "old"}],
             "flds": [{"name": "Texte"}, {"name": "Rückseite Extra", "plainText": False}],
         }
-        addon.models.models["Anki Markdown Pro Cloze"] = model
+        addon.models.models["MD Cloze"] = model
 
         addon.mod.ensure_cloze_notetype()
 
@@ -357,7 +357,7 @@ class TestEnsureClozeNotetype:
             "tmpls": [{"qfmt": "old", "afmt": "old"}],
             "flds": [{"name": "Texte", "plainText": False}],
         }
-        addon.models.models["Anki Markdown Pro Cloze"] = model
+        addon.models.models["MD Cloze"] = model
 
         addon.mod.ensure_cloze_notetype()
 

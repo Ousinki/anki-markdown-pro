@@ -14,8 +14,8 @@ from .shiki import store, get_config, generate_config_json
 from .settings import show_settings
 
 ADDON_DIR = Path(__file__).parent
-NOTETYPE = "Anki Markdown Pro"
-NOTETYPE_CLOZE = "Anki Markdown Pro Cloze"
+NOTETYPE = "MD"
+NOTETYPE_CLOZE = "MD Cloze"
 MENU = "Anki Markdown Pro"
 
 

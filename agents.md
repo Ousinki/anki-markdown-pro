@@ -4,7 +4,7 @@ Guidance for coding agents working in this repository.
 
 ## Scope
 
-This project is an Anki add-on that creates two note types (`Anki Markdown Pro` and `Anki Markdown Pro Cloze`), stores note content as plain markdown, renders fields as markdown during review, and adds Shiki-based syntax highlighting for code.
+This project is an Anki add-on that creates two note types (`MD` and `MD Cloze`), stores note content as plain markdown, renders fields as markdown during review, and adds Shiki-based syntax highlighting for code.
 
 ## Documentation Split
 
@@ -75,13 +75,13 @@ If a change affects rendering, editor behavior, or Shiki metadata, run `bun run 
 
 1. downloads missing Shiki languages and themes with `store.sync(get_config())`
 2. syncs `_`-prefixed media files into `collection.media`
-3. creates or updates the `Anki Markdown Pro` and `Anki Markdown Pro Cloze` note types
+3. creates or updates the `MD` and `MD Cloze` note types
 4. registers `web/editor.js` and `web/editor.css` for the editor webview
 5. registers the settings dialog
 
 ### Editor Save Path
 
-`editor_will_munge_html` converts simple HTML back into markdown before save for both `Anki Markdown Pro` and `Anki Markdown Pro Cloze` notes. That keeps stored field content clean even if Anki emits HTML while editing.
+`editor_will_munge_html` converts simple HTML back into markdown before save for both `MD` and `MD Cloze` notes. That keeps stored field content clean even if Anki emits HTML while editing.
 
 ### Card Rendering
 
@@ -98,7 +98,7 @@ Field values are passed through hidden `<script type="text/plain">` nodes with i
 
 ### Editor Integration
 
-`src/editor.ts` activates for both `Anki Markdown Pro` and `Anki Markdown Pro Cloze` note types. It uses:
+`src/editor.ts` activates for both `MD` and `MD Cloze` note types. It uses:
 
 - `anki/ui` for the `loaded` promise
 - `anki/NoteEditor` for field access
@@ -154,7 +154,7 @@ The repo includes the bundled Anki agent skill at `skills/anki/SKILL.md`.
 If you change agent-facing note conventions or workflows:
 
 - keep `skills/anki/SKILL.md`, `readme.md`, and `docs.md` in sync
-- preserve the skill requirement to use `Anki Markdown Pro` or `Anki Markdown Pro Cloze` note types
+- preserve the skill requirement to use `MD` or `MD Cloze` note types
 - preserve the requirement to get explicit user approval before adding cards to Anki
 
 ## Verification
@@ -170,7 +170,7 @@ For a quick smoke test in Anki, import `fixtures/kitchen-sink-deck.apkg`.
 
 ## Invariants
 
-- The note type name must stay `Anki Markdown Pro`. The cloze variant must stay `Anki Markdown Pro Cloze`.
+- The note type name must stay `MD`. The cloze variant must stay `MD Cloze`.
 - Basic note fields must stay `Front` and `Back`. Cloze note fields must stay `Text` and `Extra`.
 - `_`-prefixed files are synced to `collection.media` and must remain mobile-safe.
 - `web/` assets are desktop-only add-on web exports.

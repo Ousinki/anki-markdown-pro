@@ -27,7 +27,7 @@ Write flashcards in Markdown with full [syntax highlighting](docs.md#code-blocks
 
 After installing the add-on:
 
-1. **Create a new note** using the **Anki Markdown Pro** note type (Add → Note Type dropdown → Anki Markdown Pro)
+1. **Create a new note** using the **MD** note type (Add → Note Type dropdown → Anki Markdown Pro)
 2. **Write your question** in the Front field using markdown
 3. **Write your answer** in the Back field using markdown
 4. The markdown will be automatically rendered with syntax highlighting when you review the card

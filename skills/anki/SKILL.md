@@ -36,7 +36,7 @@ For potentially destructive or irreversible actions:
 
 ## Guidelines
 
-- **MUST** use the `Anki Markdown Pro` note type for basic cards or `Anki Markdown Pro Cloze` for cloze deletions
+- **MUST** use the `MD` note type for basic cards or `MD Cloze` for cloze deletions
 - Use markdown for both front and back fields
 - Test exactly one fact or idea per card
 - Make questions atomic and simple
@@ -53,12 +53,12 @@ For potentially destructive or irreversible actions:
 
 ## Choosing Card Type
 
-Use **Anki Markdown Pro** (Front/Back) for question-answer pairs where you write a specific question.
-Use **Anki Markdown Pro Cloze** (Text/Extra) for fill-in-the-blank cards where hiding parts of a statement is more natural than writing a question.
+Use **MD** (Front/Back) for question-answer pairs where you write a specific question.
+Use **MD Cloze** (Text/Extra) for fill-in-the-blank cards where hiding parts of a statement is more natural than writing a question.
 
 ## Cloze Cards
 
-Use `Anki Markdown Pro Cloze` for fill-in-the-blank cards. Fields are `Text` and `Extra`.
+Use `MD Cloze` for fill-in-the-blank cards. Fields are `Text` and `Extra`.
 
 ### Syntax
 
@@ -114,13 +114,13 @@ The `Extra` field appears on the back of every card. Use it for context, example
 
 ```bash
 # Basic cloze
-$ANKI add "MyDeck" "Anki Markdown Pro Cloze" '{"Text":"The {{c1::CPU}} executes {{c2::instructions}}.","Extra":"Basic computer architecture."}' --tags "cs"
+$ANKI add "MyDeck" "MD Cloze" '{"Text":"The {{c1::CPU}} executes {{c2::instructions}}.","Extra":"Basic computer architecture."}' --tags "cs"
 
 # Cloze with hint
-$ANKI add "MyDeck" "Anki Markdown Pro Cloze" '{"Text":"{{c1::JavaScript::language}} was created in {{c2::1995::year}}.","Extra":"Created by Brendan Eich."}' --tags "history"
+$ANKI add "MyDeck" "MD Cloze" '{"Text":"{{c1::JavaScript::language}} was created in {{c2::1995::year}}.","Extra":"Created by Brendan Eich."}' --tags "history"
 
 # Cloze with blur
-$ANKI add "MyDeck" "Anki Markdown Pro Cloze" '{"Text":"The speed of light is {{c1::299,792,458 m/s::blur}}.","Extra":"Often approximated as 3 x 10^8 m/s."}' --tags "physics"
+$ANKI add "MyDeck" "MD Cloze" '{"Text":"The speed of light is {{c1::299,792,458 m/s::blur}}.","Extra":"Often approximated as 3 x 10^8 m/s."}' --tags "physics"
 ```
 
 ## Front Field Format

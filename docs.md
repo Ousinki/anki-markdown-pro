@@ -59,7 +59,7 @@ Press <kbd>Ctrl</kbd>+<kbd>C</kbd> to copy
 
 ## Cloze Deletions
 
-Cloze deletions create fill-in-the-blank cards. Use the **Anki Markdown Pro Cloze** note type with `Text` and `Extra` fields.
+Cloze deletions create fill-in-the-blank cards. Use the **MD Cloze** note type with `Text` and `Extra` fields.
 
 ### Syntax
 
