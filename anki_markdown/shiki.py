@@ -61,12 +61,26 @@ def rewrite_lang_imports(content: str) -> str:
 
 # I/O
 
-def fetch_module(url: str) -> bytes:
-    """Fetch module content from esm.sh."""
+def fetch_module(url: str, retries: int = 3) -> bytes:
+    """Fetch module content from esm.sh with retries."""
+    import time
+    import http.client
+    import urllib.error
+    
     ctx = ssl.create_default_context()
     req = urllib.request.Request(url, headers={"User-Agent": "AnkiMarkdown/1.0"})
-    with urllib.request.urlopen(req, timeout=30, context=ctx) as resp:
-        return resp.read()
+    
+    last_err = None
+    for attempt in range(retries):
+        try:
+            with urllib.request.urlopen(req, timeout=30, context=ctx) as resp:
+                return resp.read()
+        except (urllib.error.URLError, http.client.IncompleteRead, ConnectionError) as e:
+            last_err = e
+            if attempt < retries - 1:
+                time.sleep(1)
+                
+    raise Exception(f"Failed to fetch {url} after {retries} attempts: {last_err}")
 
 
 # Store
