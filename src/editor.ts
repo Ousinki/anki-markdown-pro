@@ -275,6 +275,33 @@ function detachAllPreviews() {
   });
 }
 
+/** Handle Up/Down arrow keys to navigate card list when not editing. */
+function handleBrowserNav(e: KeyboardEvent) {
+  if (!active()) return;
+  if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+
+  // If any CodeMirror editor is focused (user is editing), don't intercept
+  if (document.querySelector(".CodeMirror-focused")) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+  const dir = e.key === "ArrowUp" ? "up" : "down";
+  (globalThis as any).pycmd(`anki-md-nav:${dir}`);
+}
+
+let navListenerInstalled = false;
+
+function installNavListener() {
+  if (navListenerInstalled) return;
+  document.addEventListener("keydown", handleBrowserNav, true);
+  navListenerInstalled = true;
+}
+
+function removeNavListener() {
+  document.removeEventListener("keydown", handleBrowserNav, true);
+  navListenerInstalled = false;
+}
+
 globalThis.ankiMdActivate = async () => {
   await loaded;
   document.body.classList.add("anki-md-active");
@@ -283,6 +310,7 @@ globalThis.ankiMdActivate = async () => {
   await setOption("mode", "null");
   ensureMathJax();
   startDomObserver();
+  installNavListener();
   for (const pt of plainTexts) attachWhenReady(pt);
 };
 
@@ -293,6 +321,7 @@ globalThis.ankiMdDeactivate = async () => {
   await setPlainText(false);
   stopDomObserver();
   detachAllPreviews();
+  removeNavListener();
 };
 
 loaded.then(() => {
