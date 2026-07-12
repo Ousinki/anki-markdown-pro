@@ -1,0 +1,62 @@
+# Anki Markdown Pro
+
+[English](readme.md) | [中文](readme_zh.md) | [日本語](readme_ja.md)
+
+> Markdownと[Shiki](https://shiki.style)によるシンタックスハイライトをサポートするAnkiアドオン
+
+Markdownでフラッシュカードを作成し、完全な[シンタックスハイライト](docs.md#code-blocks)を利用できます。300以上の言語と60以上のテーマから選択可能で、選択したものだけがダウンロード・同期されます。デスクトップ、モバイル、AnkiWeb全体でライトモードとダークモードをサポートしています。
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="media/back-dark.png">
+    <img src="media/back.png" alt="Anki Markdown Pro card example" width="800">
+  </picture>
+</p>
+
+> [!NOTE]
+> [Anki](https://apps.ankiweb.net/) 25.x 以降が必要です。`ツール → アドオン → アドオンを取得` から [`1172202975`](https://ankiweb.net/shared/info/1172202975) を入力してインストールしてください。
+> サポートされているすべての機能については、[ドキュメント](docs.md)を参照してください。
+
+- **シンタックスハイライト**: 300以上の言語と60以上のテーマ。選択したものだけが同期されます。
+- **高度なコードアノテーション**: 行のハイライト、単語のハイライト、フォーカスモード、エラー/警告マーカーに対応。
+- **フルMarkdown対応**: 太字、斜体、リスト、引用、テーブル、画像の直接貼り付け、アラートなど。
+- **洗練されたカードデザイン**: AnkiのネイティブUIに合わせた美しいライト/ダークスタイル。
+- **設定パネル**: 言語とテーマを動的に選択可能。
+- **クロスプラットフォーム**: デスクトップ、AnkiDroid、AnkiMobile、AnkiWebで動作します。
+- **[AIエージェントスキル](#ai-agent-skill)**: [AnkiConnect](https://foosoft.net/projects/anki-connect/)経由でAIエージェントがMarkdownフラッシュカードを作成・管理できる組み込みスキル。
+
+## 使い方
+
+アドオンをインストールした後：
+
+1. **MD** ノートタイプ（追加 → ノートタイプ → MD）を使用して**新しいノートを作成**します。
+2. 表面 (Front) にMarkdownで**質問**を書きます。
+3. 裏面 (Back) にMarkdownで**答え**を書きます。
+4. カードを復習する際、Markdownは自動的にレンダリングされ、シンタックスハイライトが適用されます。
+
+> [!NOTE]
+> コードブロック、行のハイライト、アラートなど、サポートされているすべてのMarkdown機能については、[ドキュメント](docs.md)を参照してください。
+
+## AIエージェントスキル
+
+MarkdownはAIが生成するコンテンツに最適なフォーマットであり、このアドオンはそれを活かしています。AIコーディングエージェント（Claude Code、Codexなど）が[AnkiConnect](https://foosoft.net/projects/anki-connect/)を介してエディタから直接Markdownフラッシュカードを作成・管理できるコンパニオンスキルが同梱されています。AIスキルがコンテンツを生成し、アドオンがそれをレンダリングします。
+
+**前提条件:** [AnkiConnect](https://foosoft.net/projects/anki-connect/)がインストールされ、Ankiデスクトップ版が実行されていること。
+
+インストール：
+
+```bash
+npx skills add terkelg/anki-markdown -s anki
+```
+
+## 設定
+
+`ツール → アドオン → Anki Markdown Pro → Config`から設定パネルを開きます。
+
+- **言語 (Languages)** — シンタックスハイライトに使用する言語を選択します。新しい言語は保存時にダウンロードされます。フィルターと「選択済みのみ」トグルを使用してリストを管理できます。
+- **テーマ (Theme)** — ライトモードとダークモードで別々のShikiテーマを選択できます。
+- **UI** — ボーダーレスなデザインにするための「カードレスモード」を切り替えます。
+
+## 開発
+
+ビルド、テスト、リリースの手順については、[development.md](development.md)を参照してください。
