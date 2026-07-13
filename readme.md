@@ -20,6 +20,7 @@ Write flashcards in Markdown with full [syntax highlighting](docs.md#code-blocks
 - **Advanced code annotations** including line highlighting, word highlighting, focus mode, and error/warning markers
 - **Full Markdown** with bold, italic, lists, blockquotes, tables, images, alerts, and more
 - **Full keyboard browser navigation**: Card browser supports dual-axis direction keys. Left/Right to change cards, Up/Down to change decks/tags. Sidebar selection updates the card list automatically without manual mouse clicks.
+- **Browser-Add Integration (Inline Card Addition)**: Appends a modern "+ Add Note" button below the card list, allowing card creation directly in the right-hand editor pane with `Cmd+Enter` saving and auto-cycling. Supports smart deck targeting based on sidebar selections.
 - **Clean card design** with polished light/dark styling that matches Anki's native UI
 - **Settings panel** to dynamically pick languages and themes
 - **Cross-platform** works on desktop, AnkiDroid, AnkiMobile, and AnkiWeb
@@ -48,9 +49,19 @@ This add-on implements a seamless **full-keyboard navigation flow** for the Anki
 - **In Left Sidebar Tree**:
   - Press **Up / Down arrow keys (`Up` / `Down`)**: Move the sidebar selection (decks/tags/saved searches). **The card list is automatically refreshed** in real time as the selection moves.
   - Press **Left / Right arrow keys (`Left` / `Right`)**: Focus shifts instantly back to the card list, allowing you to resume card scrolling with Left/Right keys.
-- **Quick Search Escape**:
-  - When typing in the search box, press **`Esc`** to focus back to the card list.
+- When typing in the search box, press **`Esc`** to focus back to the card list.
   - Press **`Enter`** to search, and the focus will **automatically shift back to the card list within 100ms** after search execution, allowing you to browse results immediately with keys.
+
+## Browser-Add Integration (Inline Card Addition)
+
+This add-on integrates the native "Add Cards" panel directly into the Browser window's right-hand editor pane:
+
+- **Quick Trigger**: Click the **`+ Add Note`** button at the bottom of the card list. The editor panel clears immediately and displays `Save Note` and `Cancel` buttons.
+- **Smart Deck Targeting**: Newly created notes are automatically bound to the deck currently selected in the left sidebar (e.g., `Coding::Figma`), preventing cards from being created in the wrong deck.
+- **Save and Auto-Cycle**:
+  - Click `Save Note` or press **`Ctrl+Enter`** / **`Cmd+Enter`** to save the note.
+  - Once saved, the card list refreshes immediately, and the **editor panel automatically prepares a new blank form** so you can continue adding notes consecutively.
+- **Zero-Clutter Draft Cleanup**: If you click `Cancel` or **click any existing card in the table view** while in add mode, the addon automatically exits Add Mode and deletes the temporary empty draft note from the collection, keeping your database completely clean.
 
 ## AI Agent Skill
 

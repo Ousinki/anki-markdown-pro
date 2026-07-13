@@ -93,3 +93,31 @@
    - **`_SidebarNavFilter`** 拦截 `Left/Right` 时切换回卡片列表并发送 key；拦截 `Up/Down` 时，先转发 key 移动选中行，紧接着在后台补发一个 `Return`（回车键）事件，从而自动触发 Anki 的搜索请求，联动刷新卡片列表。
 3. **搜索栏自动脱离**：
    - 监听搜索栏 `lineEdit` 的 `KeyPress`。按 `Esc` 键直接聚焦到列表；按 `Enter` 键时，利用 100ms 延时定时器在执行完搜索后自动把焦点丢回卡片列表，无缝衔接全键盘流。
+
+## 7. Browser 与 Add 界面一体化融合 (Browser-Add Integration)
+
+我们在 **Anki 26.05+** 中将原生的“新增卡片 (Add Cards)”窗口直接合并到了“浏览 (Browser)”窗口的右侧编辑器中，打造单窗口沉浸式制卡体验。
+
+### 7.1 核心机制与流程
+1. **注入入口**：在卡片列表底部注入扁平化 `+ Add Note` 按钮。
+2. **状态拦截**：点击 `+` 后启动 **Add Mode**，并解除中间列表的高亮锁定（卡片高亮仍保持，但不响应其更改）。
+3. **按钮自适应**：在右侧编辑器底部（Tags 框下方）动态注入 `Save Note` 和 `Cancel` 按钮。按钮样式通过读取 `browser.mw.pm.night_mode()` 自动匹配亮/暗色模式。
+4. **快捷保存与连击**：输入过程中按 `Ctrl+Enter` / `Cmd+Enter` 快速触发保存。保存后列表实时刷新展示新卡，且**编辑区自动刷新为下一个新的空白表单**，支持极速连续添加卡片。
+5. **智能归属牌组**：向上追溯侧边栏选中的树形节点，自动将新卡分配到当前选中牌组（如 `Coding::Figma`），避免创建在错误分区。
+
+### 7.2 致命踩坑与终极解决方案
+
+#### ❌ 踩坑 1：`AttributeError: 'Table' object has no attribute 'layout'`
+Anki 的 `browser.table` 是个自定义的数据逻辑类而非 Qt Widget，因此直接获取其布局会直接崩溃。
+* **解决**：由于卡片列表树视图 `browser.table._view` 是真正的 `QTreeView` 控件，我们通过 `table_view.parentWidget().layout()` 成功拿到实际挂载表格的布局管理器，从而将 `+ Add Note` 按钮安全、完美地追加到了列表最下方。
+
+#### ❌ 踩坑 2：弹窗警告 `No such note: '0'`
+在 Anki 浏览器机制中，编辑器的加载是与数据库实时绑定的。当我们直接在内存中 `new_note` 并调用 `set_note()` 载入时，因为该 Note 还未持久化，Note ID 为 `0`。Anki 检测到 `0` 后会误以为是数据库存在坏账，直接弹窗阻断。
+* **解决（数据库临时草稿机制）**：
+  - **创建即入库**：点击 `+ Add Note` 时，先在数据库里执行 `mw.col.add_note()`，为其生成一个合法的数据库 ID（如 `1720849301`）。这样 `set_note` 时 ID 绝对合法，完美避开警告。
+  - **撤销即销毁**：如果用户点击 `Cancel` 或鼠标**点击了列表中的其他已有卡片**（触发 note 切换），我们会通过 `gui_hooks.editor_did_load_note` 捕获到这一行为，在后台直接调用 `mw.col.remove_notes([temp_note.id])` 将这个临时空壳卡片从数据库中**完全抹除**，确保数据库干干净净，没有空白脏数据。
+  - **保存即保留**：用户编辑后保存，由于它已经在数据库里，直接调用 `browser.search()` 更新界面并开启下一张卡即可。
+
+#### ❌ 踩坑 3：`'Browser' object has no attribute 'onSearch'`
+在 Anki 的 Browser 窗口对象中，执行重新搜索和刷新的方法名并不是 `onSearch`。
+* **解决**：更正为使用原生方法 **`browser.search()`**，保证列表随动刷新 100% 正确。
