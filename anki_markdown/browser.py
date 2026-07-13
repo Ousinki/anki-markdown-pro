@@ -145,5 +145,5 @@ def _on_nav_message(handled, message: str, context) -> tuple:
     return (True, None)
 
 def register_browser_hooks():
-    gui_hooks.browser_menus_did_init.append(_on_browser_open)
+    gui_hooks.browser_did_init.append(_on_browser_open)
     gui_hooks.webview_did_receive_js_message.append(_on_nav_message)
