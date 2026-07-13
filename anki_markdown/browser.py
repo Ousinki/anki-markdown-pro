@@ -4,7 +4,7 @@ from aqt.qt import QObject, QEvent, Qt, QApplication, QKeyEvent
 _active_browser = None
 
 class _SidebarNavFilter(QObject):
-    """Redirect Up/Down arrow keys from sidebar to the card-list table."""
+    """Redirect Left/Right arrow keys from sidebar to the card-list table as Up/Down."""
 
     def __init__(self, browser):
         super().__init__(browser)
@@ -14,31 +14,59 @@ class _SidebarNavFilter(QObject):
         if event.type() != QEvent.Type.KeyPress:
             return False
         key = event.key()
-        if key not in (Qt.Key.Key_Up, Qt.Key.Key_Down):
+        if key not in (Qt.Key.Key_Left, Qt.Key.Key_Right):
             return False
         try:
             table_view = self._browser.table._view
             table_view.setFocus()
-            fwd = QKeyEvent(QEvent.Type.KeyPress, key, event.modifiers())
+            target_key = Qt.Key.Key_Up if key == Qt.Key.Key_Left else Qt.Key.Key_Down
+            fwd = QKeyEvent(QEvent.Type.KeyPress, target_key, event.modifiers())
+            QApplication.sendEvent(table_view, fwd)
+            return True
+        except Exception:
+            return False
+
+class _CardListNavFilter(QObject):
+    """Redirect Left/Right arrow keys on the card-list table to move Up/Down."""
+
+    def __init__(self, browser):
+        super().__init__(browser)
+        self._browser = browser
+
+    def eventFilter(self, obj, event):
+        if event.type() != QEvent.Type.KeyPress:
+            return False
+        key = event.key()
+        if key not in (Qt.Key.Key_Left, Qt.Key.Key_Right):
+            return False
+        try:
+            table_view = self._browser.table._view
+            target_key = Qt.Key.Key_Up if key == Qt.Key.Key_Left else Qt.Key.Key_Down
+            fwd = QKeyEvent(QEvent.Type.KeyPress, target_key, event.modifiers())
             QApplication.sendEvent(table_view, fwd)
             return True
         except Exception:
             return False
 
 def _on_browser_open(browser):
-    """Install sidebar key filter when Browser opens."""
+    """Install key filters when Browser opens."""
     global _active_browser
     _active_browser = browser
     try:
         sidebar = browser.sidebar
-        filt = _SidebarNavFilter(browser)
-        sidebar.installEventFilter(filt)
-        browser._anki_md_nav_filter = filt  # prevent GC
+        sidebar_filt = _SidebarNavFilter(browser)
+        sidebar.installEventFilter(sidebar_filt)
+        browser._anki_md_sidebar_filter = sidebar_filt  # prevent GC
+
+        table_view = browser.table._view
+        card_filt = _CardListNavFilter(browser)
+        table_view.installEventFilter(card_filt)
+        browser._anki_md_card_filter = card_filt  # prevent GC
     except Exception:
         pass
 
 def _on_nav_message(handled, message: str, context) -> tuple:
-    """Handle arrow-key navigation pycmd from editor webview."""
+    """Handle navigation pycmds from editor webview."""
     if not message.startswith("anki-md-nav:"):
         return handled
 
@@ -48,11 +76,18 @@ def _on_nav_message(handled, message: str, context) -> tuple:
         return (True, None)
 
     try:
-        table_view = browser.table._view
-        table_view.setFocus()
-        key = Qt.Key.Key_Up if direction == "up" else Qt.Key.Key_Down
-        fwd = QKeyEvent(QEvent.Type.KeyPress, key, Qt.KeyboardModifier.NoModifier)
-        QApplication.sendEvent(table_view, fwd)
+        if direction in ("left", "right"):
+            table_view = browser.table._view
+            table_view.setFocus()
+            key = Qt.Key.Key_Up if direction == "left" else Qt.Key.Key_Down
+            fwd = QKeyEvent(QEvent.Type.KeyPress, key, Qt.KeyboardModifier.NoModifier)
+            QApplication.sendEvent(table_view, fwd)
+        elif direction in ("up", "down"):
+            sidebar = browser.sidebar
+            sidebar.setFocus()
+            key = Qt.Key.Key_Up if direction == "up" else Qt.Key.Key_Down
+            fwd = QKeyEvent(QEvent.Type.KeyPress, key, Qt.KeyboardModifier.NoModifier)
+            QApplication.sendEvent(sidebar, fwd)
     except Exception:
         pass
 

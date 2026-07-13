@@ -275,31 +275,23 @@ function detachAllPreviews() {
   });
 }
 
-/** Handle Up/Down arrow keys to navigate card list when not editing or when cursor is at boundaries. */
+/** Handle arrow keys to navigate card list (Left/Right) or sidebar (Up/Down) when not editing. */
 function handleBrowserNav(e: KeyboardEvent) {
   if (!active()) return;
-  if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+  if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) return;
 
-  // Check if cursor is editing inside CodeMirror
-  const focusedCmEl = document.querySelector(".plain-text-input:has(.CodeMirror-focused)");
-  if (focusedCmEl) {
-    const cm5 = (focusedCmEl as any)._cm5;
-    if (cm5 && typeof cm5.getCursor === "function" && typeof cm5.lineCount === "function") {
-      const cursor = cm5.getCursor();
-      const lineCount = cm5.lineCount();
-      
-      // Only allow cursor to move if we are not at the boundaries
-      if (e.key === "ArrowUp" && cursor.line > 0) return;
-      if (e.key === "ArrowDown" && cursor.line < lineCount - 1) return;
-    } else {
-      // If we can't inspect the cursor, default to safety (don't intercept)
-      return;
-    }
-  }
+  // If any CodeMirror editor is focused (user is editing), don't intercept any keys
+  if (document.querySelector(".CodeMirror-focused")) return;
 
   e.preventDefault();
   e.stopPropagation();
-  const dir = e.key === "ArrowUp" ? "up" : "down";
+
+  let dir = "";
+  if (e.key === "ArrowUp") dir = "up";
+  else if (e.key === "ArrowDown") dir = "down";
+  else if (e.key === "ArrowLeft") dir = "left";
+  else if (e.key === "ArrowRight") dir = "right";
+
   (globalThis as any).pycmd(`anki-md-nav:${dir}`);
 }
 
