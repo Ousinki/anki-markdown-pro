@@ -192,4 +192,29 @@
     &.markdown-alert-warning { --alert-color: var(--_color-warning); }
     &.markdown-alert-caution { --alert-color: var(--_color-caution); }
   }
+
+  /* ── Custom Utility Colors (Merged from user settings) ── */
+  /* ── Custom Anki Colors (Legacy) ── */
+  .anki-color-green      { color: rgb(64, 197, 49)   !important; font-weight: bold; }
+  .anki-color-yellow     { color: rgb(246, 205, 59)  !important; font-weight: bold; }
+  .anki-color-lightgreen { color: rgb(167, 226, 137) !important; font-weight: bold; }
+  .anki-color-red        { color: rgb(241, 52, 5)    !important; font-weight: bold; }
+
+  /* ── Short Color Aliases ── */
+  .red    { color: rgb(241, 52,  5)   !important; font-weight: bold; }
+  .green  { color: rgb(64,  197, 49)  !important; font-weight: bold; }
+  .yellow { color: rgb(246, 205, 59)  !important; font-weight: bold; }
+  .blue   { color: rgb(49,  138, 255) !important; font-weight: bold; }
+  .purple { color: rgb(150, 91,  251) !important; font-weight: bold; }
+  .lg     { color: rgb(167, 226, 137) !important; font-weight: bold; }
+  .gray   { color: rgb(160, 160, 160) !important; font-weight: bold; }
+
+  /* ── Transparent Background Highlight ── */
+  .bg-yellow { background-color: rgba(246, 205,  59, 0.35) !important; border-radius: 3px; padding: 0 4px; font-weight: bold; }
+  .bg-red    { background-color: rgba(241,  52,   5, 0.22) !important; border-radius: 3px; padding: 0 4px; font-weight: bold; }
+  .bg-green  { background-color: rgba(64,  197,  49, 0.22) !important; border-radius: 3px; padding: 0 4px; font-weight: bold; }
+  .bg-blue   { background-color: rgba(49,  138, 255, 0.22) !important; border-radius: 3px; padding: 0 4px; font-weight: bold; }
+  .bg-purple { background-color: rgba(150,  91, 251, 0.22) !important; border-radius: 3px; padding: 0 4px; font-weight: bold; }
+  .bg-gray   { background-color: rgba(160, 160, 160, 0.22) !important; border-radius: 3px; padding: 0 4px; font-weight: bold; }
 }
+
