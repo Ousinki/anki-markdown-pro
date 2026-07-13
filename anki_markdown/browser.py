@@ -88,7 +88,7 @@ class _CardListNavFilter(QObject):
         return False
 
 def _on_browser_open(browser):
-    """Install key filters on correct widgets when Browser opens."""
+    """Install key filters on correct widgets when Browser opens and shift focus to card list."""
     global _active_browser
     _active_browser = browser
     try:
@@ -109,6 +109,10 @@ def _on_browser_open(browser):
         card_filt = _CardListNavFilter(browser)
         table_view.installEventFilter(card_filt)
         browser._anki_md_card_filter = card_filt
+
+        # 4. Programmatically shift initial focus from search box to card list
+        from aqt.qt import QTimer
+        QTimer.singleShot(200, lambda: table_view.setFocus())
     except Exception:
         pass
 
