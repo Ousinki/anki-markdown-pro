@@ -49,15 +49,10 @@ def _on_nav_message(handled, message: str, context) -> tuple:
 
     try:
         table_view = browser.table._view
-        index = table_view.currentIndex()
-        model = table_view.model()
-
-        if direction == "up" and index.row() > 0:
-            new_idx = model.index(index.row() - 1, index.column())
-            table_view.setCurrentIndex(new_idx)
-        elif direction == "down" and index.row() < model.rowCount() - 1:
-            new_idx = model.index(index.row() + 1, index.column())
-            table_view.setCurrentIndex(new_idx)
+        table_view.setFocus()
+        key = Qt.Key.Key_Up if direction == "up" else Qt.Key.Key_Down
+        fwd = QKeyEvent(QEvent.Type.KeyPress, key, Qt.KeyboardModifier.NoModifier)
+        QApplication.sendEvent(table_view, fwd)
     except Exception:
         pass
 
