@@ -5,8 +5,8 @@
     system-ui,
     -apple-system,
     sans-serif;
-  font-size: var(--font-size-mobile, 12px);
-  line-height: var(--line-height, 1.5);
+  font-size: var(--font-size-mobile, 18px);
+  line-height: var(--line-height, 1.6);
   text-wrap: pretty;
   text-align: left;
   color: var(--_fg);
@@ -38,8 +38,8 @@
 
   @container (inline-size >= 700px) {
     &:not(.mobile *) {
-      font-size: var(--font-size, 14px);
-      max-inline-size: var(--content-max-width, 34rem);
+      font-size: var(--font-size, 16px);
+      max-inline-size: var(--content-max-width, 40rem);
       margin-inline: auto;
     }
 
