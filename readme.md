@@ -19,6 +19,7 @@ Write flashcards in Markdown with full [syntax highlighting](docs.md#code-blocks
 - **Syntax highlighting** with 300+ languages and 60+ themes, only your selections are downloaded and synced
 - **Advanced code annotations** including line highlighting, word highlighting, focus mode, and error/warning markers
 - **Full Markdown** with bold, italic, lists, blockquotes, tables, images, alerts, and more
+- **Full keyboard browser navigation**: Card browser supports dual-axis direction keys. Left/Right to change cards, Up/Down to change decks/tags. Sidebar selection updates the card list automatically without manual mouse clicks.
 - **Clean card design** with polished light/dark styling that matches Anki's native UI
 - **Settings panel** to dynamically pick languages and themes
 - **Cross-platform** works on desktop, AnkiDroid, AnkiMobile, and AnkiWeb
@@ -35,6 +36,21 @@ After installing the add-on:
 
 > [!NOTE]
 > See the [documentation](docs.md) for all supported markdown features including code blocks, line highlighting, alerts, and more.
+
+## Browser Keyboard Navigation
+
+This add-on implements a seamless **full-keyboard navigation flow** for the Anki Card Browser, allowing you to completely ditch the mouse:
+
+- **Mouse-Free Open**: When you open the Browser, focus is automatically directed to the card list table view. Meanwhile, the left sidebar tree expands and highlights the active deck of the selected card automatically.
+- **In Card List View**:
+  - Press **Left / Right arrow keys (`Left` / `Right`)**: Move the card selection up and down (`Left` goes up, `Right` goes down).
+  - Press **Up / Down arrow keys (`Up` / `Down`)**: Focus shifts instantly to the left sidebar tree view, focusing and highlighting the active deck with a blue focus frame.
+- **In Left Sidebar Tree**:
+  - Press **Up / Down arrow keys (`Up` / `Down`)**: Move the sidebar selection (decks/tags/saved searches). **The card list is automatically refreshed** in real time as the selection moves.
+  - Press **Left / Right arrow keys (`Left` / `Right`)**: Focus shifts instantly back to the card list, allowing you to resume card scrolling with Left/Right keys.
+- **Quick Search Escape**:
+  - When typing in the search box, press **`Esc`** to focus back to the card list.
+  - Press **`Enter`** to search, and the focus will **automatically shift back to the card list within 100ms** after search execution, allowing you to browse results immediately with keys.
 
 ## AI Agent Skill
 
