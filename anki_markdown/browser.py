@@ -1,5 +1,5 @@
 from aqt import gui_hooks
-from aqt.qt import QObject, QEvent, Qt, QApplication, QKeyEvent, QModelIndex, QItemSelectionModel
+from aqt.qt import QObject, QEvent, Qt, QApplication, QKeyEvent, QModelIndex, QItemSelectionModel, QPushButton, QWidget, QHBoxLayout, QVBoxLayout, QKeySequence, QShortcut
 
 _active_browser = None
 _navigating = False
@@ -181,10 +181,122 @@ class _CardListNavFilter(QObject):
                 
         return False
 
+def _get_note_type_model(mw):
+    for m in mw.col.models.all():
+        if "MD" in m["name"] or "Markdown" in m["name"]:
+            return m
+    return mw.col.models.current()
+
+def _get_active_deck_id(browser):
+    try:
+        sidebar = browser.sidebar
+        sel = sidebar.selectionModel().selectedIndexes()
+        if sel:
+            parts = []
+            idx = sel[0]
+            while idx.isValid() and idx.parent().isValid():
+                parts.insert(0, idx.data())
+                idx = idx.parent()
+            if parts:
+                full_name = "::".join(parts)
+                did = browser.mw.col.decks.id_for_name(full_name)
+                if did:
+                    return did
+    except Exception:
+        pass
+    return browser.mw.col.decks.current_id()
+
+def _enter_add_mode(browser):
+    browser._anki_md_add_mode = True
+    
+    # Resolve note type model and active deck
+    model = _get_note_type_model(browser.mw)
+    deck_id = _get_active_deck_id(browser)
+    
+    # Instantiate note and add it to database immediately so it has a valid database ID
+    note = browser.mw.col.new_note(model)
+    try:
+        browser.mw.col.add_note(note, deck_id)
+    except Exception as e:
+        from aqt.utils import tooltip
+        tooltip(f"Failed to initialize note: {e}")
+        browser._anki_md_add_mode = False
+        return
+        
+    browser._anki_md_current_temp_note = note
+    browser.editor.set_note(note)
+    
+    try:
+        browser.editor.widget.show()
+    except Exception:
+        pass
+        
+    try:
+        browser.editor.focus_field(0)
+    except Exception:
+        pass
+        
+    if hasattr(browser, "_anki_md_add_buttons"):
+        browser._anki_md_add_buttons.show()
+
+def _save_new_note(browser):
+    note = getattr(browser, "_anki_md_current_temp_note", None)
+    if not note:
+        return
+        
+    from aqt.utils import tooltip
+    
+    def on_saved():
+        if all(not f.strip() for f in note.fields):
+            tooltip("Cannot save empty note.")
+            return
+            
+        try:
+            tooltip("Note saved successfully.")
+            browser.search()
+            _exit_add_mode(browser, restore_selection=False, discard=False)
+            _enter_add_mode(browser)
+        except Exception as e:
+            tooltip(f"Failed to save note: {e}")
+            
+    browser.editor.saveNow(on_saved)
+
+def _exit_add_mode(browser, restore_selection=True, discard=True):
+    browser._anki_md_add_mode = False
+    temp_note = getattr(browser, "_anki_md_current_temp_note", None)
+    browser._anki_md_current_temp_note = None
+    
+    if hasattr(browser, "_anki_md_add_buttons"):
+        browser._anki_md_add_buttons.hide()
+        
+    if restore_selection:
+        card_ids = browser.selected_cards()
+        if card_ids:
+            try:
+                card = browser.mw.col.get_card(card_ids[0])
+                browser.editor.set_note(card.note())
+            except Exception:
+                pass
+                
+    if discard and temp_note:
+        try:
+            browser.mw.col.remove_notes([temp_note.id])
+        except Exception:
+            pass
+
+def _on_save_shortcut_triggered(browser):
+    if getattr(browser, "_anki_md_add_mode", False):
+        _save_new_note(browser)
+
 def _on_browser_open(browser):
     """Install key filters on correct widgets when Browser opens and shift focus to card list."""
     global _active_browser
     _active_browser = browser
+    
+    # Initialize add mode state
+    if not hasattr(browser, "_anki_md_add_mode"):
+        browser._anki_md_add_mode = False
+        browser._anki_md_current_temp_note = None
     
     # Trace log file creation
     try:
@@ -284,6 +396,180 @@ def _on_browser_open(browser):
                     pass
 
         QTimer.singleShot(250, init_focus)
+
+        # 5. Inject "+ Add Note" button below the card list
+        if not hasattr(browser, "_anki_md_add_btn"):
+            add_btn = QPushButton("+ Add Note")
+            is_night = browser.mw.pm.night_mode()
+            if is_night:
+                add_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #2b2b2b;
+                        color: #ffffff;
+                        border: 1px solid #3c3f41;
+                        border-radius: 4px;
+                        padding: 6px;
+                        font-weight: bold;
+                    }
+                    QPushButton:hover {
+                        background-color: #353535;
+                    }
+                    QPushButton:pressed {
+                        background-color: #202020;
+                    }
+                """)
+            else:
+                add_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #f3f4f6;
+                        color: #1f2937;
+                        border: 1px solid #d1d5db;
+                        border-radius: 4px;
+                        padding: 6px;
+                        font-weight: bold;
+                    }
+                    QPushButton:hover {
+                        background-color: #e5e7eb;
+                    }
+                    QPushButton:pressed {
+                        background-color: #d1d5db;
+                    }
+                """)
+            add_btn.clicked.connect(lambda: _enter_add_mode(browser))
+            
+            # Find the parent widget of table_view to add button at the bottom of the table area layout
+            table_parent = table_view.parentWidget()
+            if table_parent and table_parent.layout():
+                table_parent.layout().addWidget(add_btn)
+                browser._anki_md_add_btn = add_btn
+                try:
+                    with open("/Users/ousin/Projects/AnkiMarkdownPro/debug.log", "a") as f:
+                        f.write("Add button injected below card list\n")
+                except Exception:
+                    pass
+            else:
+                try:
+                    with open("/Users/ousin/Projects/AnkiMarkdownPro/debug.log", "a") as f:
+                        f.write("Failed to find table parent layout\n")
+                except Exception:
+                    pass
+
+        # 6. Inject Save/Cancel buttons at the bottom of the editor
+        if not hasattr(browser, "_anki_md_add_buttons"):
+            from aqt.qt import QWidget, QHBoxLayout
+            btn_widget = QWidget()
+            btn_layout = QHBoxLayout(btn_widget)
+            btn_layout.setContentsMargins(10, 5, 10, 5)
+            
+            save_btn = QPushButton("Save Note")
+            cancel_btn = QPushButton("Cancel")
+            
+            is_night = browser.mw.pm.night_mode()
+            if is_night:
+                save_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #318aff;
+                        color: #ffffff;
+                        border: 1px solid #1a5bb8;
+                        border-radius: 5px;
+                        padding: 8px 16px;
+                        font-size: 13px;
+                        font-weight: bold;
+                    }
+                    QPushButton:hover {
+                        background-color: #4c9aff;
+                    }
+                    QPushButton:pressed {
+                        background-color: #1a5bb8;
+                    }
+                """)
+                cancel_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #3c3c3c;
+                        color: #dcdcdc;
+                        border: 1px solid #555555;
+                        border-radius: 5px;
+                        padding: 8px 16px;
+                        font-size: 13px;
+                    }
+                    QPushButton:hover {
+                        background-color: #4e4e4e;
+                    }
+                    QPushButton:pressed {
+                        background-color: #2b2b2b;
+                    }
+                """)
+            else:
+                save_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #2563eb;
+                        color: #ffffff;
+                        border: 1px solid #1d4ed8;
+                        border-radius: 5px;
+                        padding: 8px 16px;
+                        font-size: 13px;
+                        font-weight: bold;
+                    }
+                    QPushButton:hover {
+                        background-color: #3b82f6;
+                    }
+                    QPushButton:pressed {
+                        background-color: #1d4ed8;
+                    }
+                """)
+                cancel_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #f3f4f6;
+                        color: #1f2937;
+                        border: 1px solid #d1d5db;
+                        border-radius: 5px;
+                        padding: 8px 16px;
+                        font-size: 13px;
+                    }
+                    QPushButton:hover {
+                        background-color: #e5e7eb;
+                    }
+                    QPushButton:pressed {
+                        background-color: #d1d5db;
+                    }
+                """)
+            
+            btn_layout.addWidget(save_btn)
+            btn_layout.addWidget(cancel_btn)
+            btn_widget.hide()
+            
+            editor_widget = browser.editor.widget
+            if editor_widget and editor_widget.layout():
+                editor_widget.layout().addWidget(btn_widget)
+                browser._anki_md_add_buttons = btn_widget
+                browser._anki_md_save_btn = save_btn
+                browser._anki_md_cancel_btn = cancel_btn
+                
+                save_btn.clicked.connect(lambda: _save_new_note(browser))
+                cancel_btn.clicked.connect(lambda: _exit_add_mode(browser))
+                try:
+                    with open("/Users/ousin/Projects/AnkiMarkdownPro/debug.log", "a") as f:
+                        f.write("Save/Cancel buttons injected in editor layout\n")
+                except Exception:
+                    pass
+            else:
+                try:
+                    with open("/Users/ousin/Projects/AnkiMarkdownPro/debug.log", "a") as f:
+                        f.write("Failed to find editor widget layout\n")
+                except Exception:
+                    pass
+
+        # 7. Setup shortcuts for Ctrl+Enter / Cmd+Enter
+        if not hasattr(browser, "_anki_md_save_shortcut"):
+            from aqt.qt import QShortcut, QKeySequence
+            shortcut = QShortcut(QKeySequence("Ctrl+Return"), browser)
+            shortcut.activated.connect(lambda: _on_save_shortcut_triggered(browser))
+            browser._anki_md_save_shortcut = shortcut
+            
+            shortcut_mac = QShortcut(QKeySequence("Meta+Return"), browser)
+            shortcut_mac.activated.connect(lambda: _on_save_shortcut_triggered(browser))
+            browser._anki_md_save_shortcut_mac = shortcut_mac
+
     except Exception as e:
         import traceback
         try:

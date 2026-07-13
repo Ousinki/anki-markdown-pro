@@ -75,6 +75,18 @@ def on_editor_load_note(editor: Editor):
     if not editor.note:
         return
         
+    # Auto-exit Add Mode if user selects another note in Browser
+    browser = getattr(editor, "parentWindow", None)
+    if browser and getattr(browser, "_anki_md_add_mode", False):
+        if editor.note != getattr(browser, "_anki_md_current_temp_note", None):
+            from .browser import _exit_add_mode
+            _exit_add_mode(browser, restore_selection=False, discard=True)
+            # Refresh card list to remove the discarded note from search results
+            try:
+                browser.search()
+            except Exception:
+                pass
+        
     is_md = is_anki_markdown(editor.note.note_type())
     editor.web.eval(f"window.__ankiMdPasteActive = {'true' if is_md else 'false'};")
     
