@@ -62,8 +62,7 @@ const sanitize = (html: string): string => {
   }
 };
 
-md.renderer.rules.html_inline = (tokens, idx) => sanitize(tokens[idx].content);
-md.renderer.rules.html_block = (tokens, idx) => sanitize(tokens[idx].content);
+
 
 
 
@@ -123,7 +122,7 @@ export function renderWithLatex(text: string): string {
   // 4. Restore native MathJax delimiters (placeholders survive markdown untouched)
   html = html.replace(/\u0002ANKI_MATH_(\d+)\u0003/g, (_, i) => stash[parseInt(i)]);
 
-  return html;
+  return sanitize(html);
 }
 
 // Automatically adjust tooltip placement on hover to prevent clipping near screen boundaries
