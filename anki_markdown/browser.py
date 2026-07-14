@@ -1,3 +1,6 @@
+from pathlib import Path
+DEBUG_LOG_PATH = str(Path(__file__).parent / "debug.log")
+
 from aqt import gui_hooks
 from aqt.qt import QObject, QEvent, Qt, QApplication, QKeyEvent, QModelIndex, QItemSelectionModel, QPushButton, QWidget, QHBoxLayout, QVBoxLayout, QKeySequence, QShortcut
 
@@ -174,7 +177,7 @@ class _CardListNavFilter(QObject):
             except Exception as e:
                 import traceback
                 try:
-                    with open("/Users/ousin/Projects/AnkiMarkdownPro/debug.log", "a") as f:
+                    with open(DEBUG_LOG_PATH, "a") as f:
                         f.write(f"Exception in card list Up/Down: {traceback.format_exc()}\n")
                 except Exception:
                     pass
@@ -298,14 +301,19 @@ def _save_new_note(browser):
             return
             
         try:
+            browser.mw.col.update_note(note)
             tooltip("Note saved successfully.")
-            browser.search()
             _exit_add_mode(browser, restore_selection=False, discard=False)
+            browser.search()
             _enter_add_mode(browser)
         except Exception as e:
             tooltip(f"Failed to save note: {e}")
             
     browser.editor.saveNow(on_saved)
+
+def _on_save_shortcut_triggered(browser):
+    if getattr(browser, "_anki_md_add_mode", False):
+        _save_new_note(browser)
 
 def _exit_add_mode(browser, restore_selection=True, discard=True):
     browser._anki_md_add_mode = False
@@ -493,7 +501,7 @@ def _on_browser_open(browser):
     
     # Trace log file creation
     try:
-        with open("/Users/ousin/Projects/AnkiMarkdownPro/debug.log", "w") as f:
+        with open(DEBUG_LOG_PATH, "w") as f:
             f.write("_on_browser_open started\n")
     except Exception:
         pass
@@ -518,7 +526,7 @@ def _on_browser_open(browser):
         browser._anki_md_card_filter = card_filt
 
         try:
-            with open("/Users/ousin/Projects/AnkiMarkdownPro/debug.log", "a") as f:
+            with open(DEBUG_LOG_PATH, "a") as f:
                 f.write("Filters installed successfully\n")
         except Exception:
             pass
@@ -529,7 +537,7 @@ def _on_browser_open(browser):
         def init_focus():
             try:
                 try:
-                    with open("/Users/ousin/Projects/AnkiMarkdownPro/debug.log", "a") as f:
+                    with open(DEBUG_LOG_PATH, "a") as f:
                         f.write("init_focus callback started\n")
                 except Exception:
                     pass
@@ -539,7 +547,7 @@ def _on_browser_open(browser):
                 
                 card_ids = browser.selected_cards()
                 try:
-                    with open("/Users/ousin/Projects/AnkiMarkdownPro/debug.log", "a") as f:
+                    with open(DEBUG_LOG_PATH, "a") as f:
                         f.write(f"selected_cards count: {len(card_ids)}\n")
                 except Exception:
                     pass
@@ -551,7 +559,7 @@ def _on_browser_open(browser):
                     deck_name = browser.mw.col.decks.name(card.did)
                     
                     try:
-                        with open("/Users/ousin/Projects/AnkiMarkdownPro/debug.log", "a") as f:
+                        with open(DEBUG_LOG_PATH, "a") as f:
                             f.write(f"deck_name: {deck_name}\n")
                     except Exception:
                         pass
@@ -559,7 +567,7 @@ def _on_browser_open(browser):
                     target_idx = _find_deck_index(model, QModelIndex(), deck_name)
                     
                     try:
-                        with open("/Users/ousin/Projects/AnkiMarkdownPro/debug.log", "a") as f:
+                        with open(DEBUG_LOG_PATH, "a") as f:
                             f.write(f"target_idx valid: {target_idx.isValid()}\n")
                     except Exception:
                         pass
@@ -576,14 +584,14 @@ def _on_browser_open(browser):
                         sidebar.scrollTo(target_idx)
                         
                         try:
-                            with open("/Users/ousin/Projects/AnkiMarkdownPro/debug.log", "a") as f:
+                            with open(DEBUG_LOG_PATH, "a") as f:
                                 f.write("Sidebar index set and scrolled\n")
                         except Exception:
                             pass
             except Exception as e:
                 import traceback
                 try:
-                    with open("/Users/ousin/Projects/AnkiMarkdownPro/debug.log", "a") as f:
+                    with open(DEBUG_LOG_PATH, "a") as f:
                         f.write(f"Exception in init_focus: {traceback.format_exc()}\n")
                 except Exception:
                     pass
@@ -601,13 +609,13 @@ def _on_browser_open(browser):
                 table_parent.layout().addWidget(add_btn)
                 browser._anki_md_add_btn = add_btn
                 try:
-                    with open("/Users/ousin/Projects/AnkiMarkdownPro/debug.log", "a") as f:
+                    with open(DEBUG_LOG_PATH, "a") as f:
                         f.write("Add button injected below card list\n")
                 except Exception:
                     pass
             else:
                 try:
-                    with open("/Users/ousin/Projects/AnkiMarkdownPro/debug.log", "a") as f:
+                    with open(DEBUG_LOG_PATH, "a") as f:
                         f.write("Failed to find table parent layout\n")
                 except Exception:
                     pass
@@ -636,13 +644,13 @@ def _on_browser_open(browser):
                 save_btn.clicked.connect(lambda: _save_new_note(browser))
                 cancel_btn.clicked.connect(lambda: _exit_add_mode(browser))
                 try:
-                    with open("/Users/ousin/Projects/AnkiMarkdownPro/debug.log", "a") as f:
+                    with open(DEBUG_LOG_PATH, "a") as f:
                         f.write("Save/Cancel buttons injected in editor layout\n")
                 except Exception:
                     pass
             else:
                 try:
-                    with open("/Users/ousin/Projects/AnkiMarkdownPro/debug.log", "a") as f:
+                    with open(DEBUG_LOG_PATH, "a") as f:
                         f.write("Failed to find editor widget layout\n")
                 except Exception:
                     pass
@@ -748,7 +756,7 @@ def _on_browser_open(browser):
     except Exception as e:
         import traceback
         try:
-            with open("/Users/ousin/Projects/AnkiMarkdownPro/debug.log", "a") as f:
+            with open(DEBUG_LOG_PATH, "a") as f:
                 f.write(f"Exception in _on_browser_open: {traceback.format_exc()}\n")
         except Exception:
             pass
