@@ -160,7 +160,7 @@ def get_template(name: str) -> str:
     import time
     version = int(time.time())
     template = template.replace("./_review.js", f"./_review.js?v={version}")
-    template = template.replace("./_review.css", f"./_review.css?v={version}")
+    template = template.replace("_review.css", f"_review.css?v={version}")
     
     # Insert config script at the beginning of template
     return config_script + "\n" + template
