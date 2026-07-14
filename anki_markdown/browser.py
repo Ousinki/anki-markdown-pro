@@ -2,7 +2,7 @@ from pathlib import Path
 DEBUG_LOG_PATH = str(Path(__file__).parent / "debug.log")
 
 from aqt import gui_hooks
-from aqt.qt import QObject, QEvent, Qt, QApplication, QKeyEvent, QModelIndex, QItemSelectionModel, QPushButton, QWidget, QHBoxLayout, QVBoxLayout, QKeySequence, QShortcut
+from aqt.qt import QObject, QEvent, Qt, QApplication, QKeyEvent, QModelIndex, QItemSelectionModel, QPushButton, QWidget, QHBoxLayout, QVBoxLayout, QKeySequence, QShortcut, QComboBox
 
 _active_browser = None
 _navigating = False
@@ -184,11 +184,87 @@ class _CardListNavFilter(QObject):
                 
         return False
 
-def _get_note_type_model(mw):
+def _get_markdown_note_types(mw):
+    models = []
     for m in mw.col.models.all():
         if "MD" in m["name"] or "Markdown" in m["name"]:
-            return m
-    return mw.col.models.current()
+            models.append(m)
+    if not models:
+        models = mw.col.models.all()
+    models.sort(key=lambda x: x["name"])
+    return models
+
+def _get_note_type_model(browser):
+    # 1. Try to get the note type of the currently selected card first
+    try:
+        card_ids = browser.selected_cards()
+        if card_ids:
+            card = browser.mw.col.get_card(card_ids[0])
+            note = card.note()
+            m = note.model()
+            if "MD" in m["name"] or "Markdown" in m["name"]:
+                return m
+    except Exception:
+        pass
+
+    # 2. Otherwise use the first Markdown model in sorted list
+    models = _get_markdown_note_types(browser.mw)
+    if models:
+        return models[0]
+        
+    return browser.mw.col.models.current()
+
+def _on_note_type_changed(browser, index):
+    if not getattr(browser, "_anki_md_add_mode", False):
+        return
+    note = getattr(browser, "_anki_md_current_temp_note", None)
+    if not note:
+        return
+        
+    combo = browser._anki_md_type_combo
+    model_id = combo.itemData(index)
+    if not model_id:
+        return
+        
+    new_model = browser.mw.col.models.get(model_id)
+    if not new_model or new_model["id"] == note.mid:
+        return
+        
+    # Save current editor field values before switching
+    browser.editor.saveNow(lambda: _switch_note_type(browser, note, new_model))
+
+def _switch_note_type(browser, old_note, new_model):
+    deck_id = _get_active_deck_id(browser)
+    
+    # Copy field values
+    old_fields = list(old_note.fields)
+    
+    # Remove old note
+    try:
+        browser.mw.col.remove_notes([old_note.id])
+    except Exception:
+        pass
+        
+    # Create new note
+    new_note = browser.mw.col.new_note(new_model)
+    for idx, val in enumerate(old_fields):
+        if idx < len(new_note.fields):
+            new_note.fields[idx] = val
+            
+    try:
+        browser.mw.col.add_note(new_note, deck_id)
+    except Exception as e:
+        from aqt.utils import tooltip
+        tooltip(f"Failed to switch note type: {e}")
+        return
+        
+    browser._anki_md_current_temp_note = new_note
+    browser.editor.set_note(new_note)
+    
+    try:
+        browser.editor.focus_field(0)
+    except Exception:
+        pass
 
 def _get_active_deck_id(browser):
     try:
@@ -222,7 +298,7 @@ def _enter_add_mode(browser):
     browser._anki_md_add_mode = True
     
     # Resolve note type model and active deck
-    model = _get_note_type_model(browser.mw)
+    model = _get_note_type_model(browser)
     deck_id = _get_active_deck_id(browser)
     
     # Instantiate note and add it to database immediately so it has a valid database ID
@@ -237,6 +313,19 @@ def _enter_add_mode(browser):
         
     browser._anki_md_current_temp_note = note
     browser.editor.set_note(note)
+
+    if hasattr(browser, "_anki_md_type_combo"):
+        combo = browser._anki_md_type_combo
+        combo.blockSignals(True)
+        combo.clear()
+        models = _get_markdown_note_types(browser.mw)
+        selected_idx = 0
+        for idx, m in enumerate(models):
+            combo.addItem(m["name"], m["id"])
+            if m["id"] == note.mid:
+                selected_idx = idx
+        combo.setCurrentIndex(selected_idx)
+        combo.blockSignals(False)
 
     # Ensure the editor and all its parent widgets are visible
     try:
@@ -620,16 +709,18 @@ def _on_browser_open(browser):
                 except Exception:
                     pass
 
-        # 6. Inject Save/Cancel buttons at the bottom of the editor
+        # 6. Inject Save/Cancel buttons and Note Type selector at the bottom of the editor
         if not hasattr(browser, "_anki_md_add_buttons"):
-            from aqt.qt import QWidget, QHBoxLayout
+            from aqt.qt import QWidget, QHBoxLayout, QComboBox
             btn_widget = QWidget()
             btn_layout = QHBoxLayout(btn_widget)
             btn_layout.setContentsMargins(10, 5, 10, 5)
             
+            type_combo = QComboBox()
             save_btn = QPushButton("Save Note")
             cancel_btn = QPushButton("Cancel")
             
+            btn_layout.addWidget(type_combo)
             btn_layout.addWidget(save_btn)
             btn_layout.addWidget(cancel_btn)
             btn_widget.hide()
@@ -638,11 +729,13 @@ def _on_browser_open(browser):
             if editor_widget and editor_widget.layout():
                 editor_widget.layout().addWidget(btn_widget)
                 browser._anki_md_add_buttons = btn_widget
+                browser._anki_md_type_combo = type_combo
                 browser._anki_md_save_btn = save_btn
                 browser._anki_md_cancel_btn = cancel_btn
                 
                 save_btn.clicked.connect(lambda: _save_new_note(browser))
                 cancel_btn.clicked.connect(lambda: _exit_add_mode(browser))
+                type_combo.currentIndexChanged.connect(lambda idx: _on_note_type_changed(browser, idx))
                 try:
                     with open(DEBUG_LOG_PATH, "a") as f:
                         f.write("Save/Cancel buttons injected in editor layout\n")
