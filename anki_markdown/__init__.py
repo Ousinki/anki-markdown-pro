@@ -6,7 +6,7 @@ from aqt.editor import Editor
 
 from .shiki import store, get_config, generate_config_json
 from .settings import show_settings
-from .utils import is_anki_markdown, NOTETYPE, NOTETYPE_CLOZE
+from .utils import is_anki_markdown, NOTETYPE, NOTETYPE_CLOZE, append_media_refs
 from .editor import register_editor_hooks
 from .browser import register_browser_hooks
 
@@ -54,12 +54,13 @@ def html_to_markdown(content: str) -> str:
 
 
 def on_munge_html(txt: str, editor: Editor) -> str:
-    """Convert HTML to markdown before saving."""
+    """Convert HTML to markdown and append hidden media refs before saving."""
     if not editor.note:
         return txt
     if not is_anki_markdown(editor.note.note_type()):
         return txt
-    return html_to_markdown(txt)
+    md = html_to_markdown(txt)
+    return append_media_refs(md)
 
 
 def on_profile_loaded():
@@ -79,10 +80,38 @@ def on_profile_loaded():
     # Create/update note types with current config
     ensure_notetype()
     ensure_cloze_notetype()
+    # Migrate existing notes to ensure media reference safety
+    migrate_existing_notes()
     # Register web exports and settings action
     mw.addonManager.setWebExports(__name__, r"(web/.*|_.*)")
     mw.addonManager.setConfigAction(__name__, show_settings)
     add_menu()
+
+
+def migrate_existing_notes():
+    """Scan all markdown notes and ensure they have correct media references appended."""
+    try:
+        updated_count = 0
+        for nt in mw.col.models.all():
+            if is_anki_markdown(nt):
+                # Find all note IDs for this note type safely using find_notes search query
+                nids = mw.col.find_notes(f'note:"{nt["name"]}"')
+                for nid in nids:
+                    note = mw.col.get_note(nid)
+                    modified = False
+                    for i, field in enumerate(note.fields):
+                        new_field = append_media_refs(field)
+                        if new_field != field:
+                            note.fields[i] = new_field
+                            modified = True
+                    if modified:
+                        mw.col.update_note(note)
+                        updated_count += 1
+                        
+        if updated_count > 0:
+            print(f"AnkiMD: Migrated {updated_count} notes to ensure media reference safety.")
+    except Exception as e:
+        print("AnkiMD: Error migrating notes:", e)
 
 
 def sync_media(removed: list[str] = None):

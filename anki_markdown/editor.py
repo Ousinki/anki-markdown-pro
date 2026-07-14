@@ -1,7 +1,7 @@
 from aqt import mw, gui_hooks
 from aqt.editor import Editor
 from aqt.webview import WebContent
-from .utils import is_anki_markdown
+from .utils import is_anki_markdown, strip_media_refs
 
 # 1MB limit for pasted images
 _MAX_IMAGE_BYTES = 1024 * 1024
@@ -91,6 +91,10 @@ def on_editor_load_note(editor: Editor):
     editor.web.eval(f"window.__ankiMdPasteActive = {'true' if is_md else 'false'};")
     
     if is_md:
+        # Strip media references from all fields so the user sees clean markdown
+        for i, field in enumerate(editor.note.fields):
+            editor.note.fields[i] = strip_media_refs(field)
+            
         _inject_paste_handler(editor)
         editor.web.eval("window.ankiMdActivate && window.ankiMdActivate();")
     else:
