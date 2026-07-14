@@ -10,7 +10,8 @@ md.use(alerts as never);
 const ALLOWED_TAGS = new Set([
   "font", "kbd", "img", "a", "b", "i", "em", "strong", "br", "code", "mark",
   "s", "del", "sup", "sub", "span", "hr", "table", "thead", "tbody", "tr",
-  "th", "td", "abbr", "svg", "circle", "path", "polygon", "rect"
+  "th", "td", "abbr", "svg", "circle", "path", "polygon", "rect",
+  "p", "div", "pre", "ol", "ul", "li", "h1", "h2", "h3", "h4", "h5", "h6", "blockquote"
 ]);
 
 const sanitize = (html: string): string => {
@@ -24,6 +25,10 @@ const sanitize = (html: string): string => {
         const el = node as HTMLElement;
         const tag = el.tagName.toLowerCase();
         if (!ALLOWED_TAGS.has(tag)) {
+          // Replace node with its children to preserve raw texts/sub-elements
+          while (el.firstChild) {
+            el.parentNode?.insertBefore(el.firstChild, el);
+          }
           el.parentNode?.removeChild(el);
           return;
         }
@@ -56,6 +61,9 @@ const sanitize = (html: string): string => {
     return html;
   }
 };
+
+md.renderer.rules.html_inline = (tokens, idx) => sanitize(tokens[idx].content);
+md.renderer.rules.html_block = (tokens, idx) => sanitize(tokens[idx].content);
 
 
 
@@ -115,7 +123,7 @@ export function renderWithLatex(text: string): string {
   // 4. Restore native MathJax delimiters (placeholders survive markdown untouched)
   html = html.replace(/\u0002ANKI_MATH_(\d+)\u0003/g, (_, i) => stash[parseInt(i)]);
 
-  return sanitize(html);
+  return html;
 }
 
 // Automatically adjust tooltip placement on hover to prevent clipping near screen boundaries
