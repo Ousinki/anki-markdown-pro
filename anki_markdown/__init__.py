@@ -126,6 +126,13 @@ def get_template(name: str) -> str:
     config_json = generate_config_json()
     # Inject config JSON into template
     config_script = f'<script type="application/json" id="anki-md-config">{config_json}</script>'
+    
+    # Cache bust for review JS/CSS imports
+    import time
+    version = int(time.time())
+    template = template.replace("./_review.js", f"./_review.js?v={version}")
+    template = template.replace("./_review.css", f"./_review.css?v={version}")
+    
     # Insert config script at the beginning of template
     return config_script + "\n" + template
 

@@ -427,6 +427,28 @@ function injectMarkdownToolbar() {
       cmd: () => wrapInActiveCm5("\n| Header | Header |\n| --- | --- |\n| Cell | Cell |\n", ""),
       targetGroup: insertGroup,
       svg: `<svg viewBox="0 0 24 24"><path d="M4,5H20A2,2 0 0,1 22,7V17A2,2 0 0,1 20,19H4A2,2 0 0,1 2,17V7A2,2 0 0,1 4,5M4,7V11H8V7H4M10,7V11H14V7H10M16,7V11H20V7H16M4,13V17H8V13H4M10,13V17H14V13H10M16,13V17H20V13H16Z" fill="currentColor"></path></svg>`
+    },
+    {
+      btn: null,
+      label: "Abbr",
+      title: "Abbreviation / Tooltip (缩写/悬浮提示)",
+      cmd: () => {
+        if (!activeCm5) return;
+        const selection = activeCm5.getSelection();
+        const doc = activeCm5.getDoc();
+        const cursor = doc.getCursor();
+        if (!selection) {
+          activeCm5.replaceSelection("[]{}");
+          doc.setCursor({ line: cursor.line, ch: cursor.ch + 1 });
+        } else {
+          activeCm5.replaceSelection(`[${selection}]{}`);
+          const newCursor = doc.getCursor();
+          doc.setCursor({ line: newCursor.line, ch: newCursor.ch - 1 });
+        }
+        activeCm5.focus();
+      },
+      targetGroup: insertGroup,
+      svg: `<svg viewBox="0 0 24 24"><path d="M11 9h2v2h-2zm0 4h2v4h-2zm1-11A10 10 0 1 0 22 12 10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" fill="currentColor"></path></svg>`
     }
   ];
   
