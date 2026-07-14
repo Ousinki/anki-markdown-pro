@@ -91,6 +91,7 @@ def on_editor_load_note(editor: Editor):
     editor.web.eval(f"window.__ankiMdPasteActive = {'true' if is_md else 'false'};")
     
     if is_md:
+        _inject_paste_handler(editor)
         editor.web.eval("window.ankiMdActivate && window.ankiMdActivate();")
     else:
         editor.web.eval("window.ankiMdDeactivate && window.ankiMdDeactivate();")
@@ -131,7 +132,7 @@ def on_paste_js_message(handled: tuple, message: str, context: object) -> tuple:
             
             mw.col.media.write_data(fname, data)
             
-            context.web.eval(f"document.execCommand('insertText', false, '![]({fname})');")
+            context.web.eval(f"if (window.ankiMdInsertText) {{ window.ankiMdInsertText('![]({fname})'); }} else {{ document.execCommand('insertText', false, '![]({fname})'); }}")
         except Exception as e:
             print("Error pasting image:", e)
         return (True, None)

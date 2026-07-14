@@ -185,6 +185,23 @@ function hidePreview(container: HTMLElement) {
 }
 
 let activeCm5: any = null;
+
+(globalThis as any).ankiMdInsertText = (text: string) => {
+  let cm = activeCm5;
+  if (!cm) {
+    const cmEl = document.querySelector(".CodeMirror") as any;
+    if (cmEl && cmEl.CodeMirror) {
+      cm = cmEl.CodeMirror;
+    }
+  }
+  if (cm && typeof cm.replaceSelection === "function") {
+    cm.replaceSelection(text);
+    cm.focus();
+  } else {
+    document.execCommand('insertText', false, text);
+  }
+};
+
 let activeColor = "#66b2ff";
 let activeHighlight = "#ffeb3b80";
 let focusTimeout: any = null;
