@@ -254,6 +254,32 @@ function wrapInActiveCm5(prefix: string, suffix: string) {
   wrapSelection(activeCm5, prefix, suffix);
 }
 
+function insertMarkdownCloze(same: boolean) {
+  if (!active() || !activeCm5) return;
+  const selection = activeCm5.getSelection();
+  const text = activeCm5.getValue();
+  
+  let max = 0;
+  const matches = Array.from(text.matchAll(/\{\{c(\d+)::/g)) as RegExpExecArray[];
+  for (const m of matches) {
+    const val = parseInt(m[1], 10);
+    if (val > max) max = val;
+  }
+  
+  const idx = same ? (max || 1) : (max + 1);
+  
+  if (!selection) {
+    const doc = activeCm5.getDoc();
+    const cursor = doc.getCursor();
+    activeCm5.replaceSelection(`{{c${idx}::}}`);
+    doc.setCursor({ line: cursor.line, ch: cursor.ch + 5 + String(idx).length });
+  } else {
+    activeCm5.replaceSelection(`{{c${idx}::${selection}}}`);
+  }
+  activeCm5.focus();
+}
+
+
 function clickNativeHelper(nativeBtn: HTMLButtonElement | null) {
   if (!nativeBtn) return;
   const wasDisabled = nativeBtn.hasAttribute("disabled");
@@ -306,6 +332,11 @@ function injectMarkdownToolbar() {
     const txt = getCleanText(btn);
     return txt.includes("superscript") || txt.includes("上標") || txt.includes("上标") || txt.includes("ctrl+shift+=") || txt.includes("⌘⇧+");
   });
+  
+  const clozeBtnPrimary = findBtn(btn => {
+    const txt = getCleanText(btn);
+    return txt.includes("cloze") || txt.includes("挖空") || txt.includes("克漏字") || txt.includes("c1");
+  });
 
   if (!boldBtnPrimary) console.warn("AnkiMD: Bold primary button not found");
   if (!colorBtnPrimary) console.warn("AnkiMD: Color primary button not found");
@@ -320,6 +351,7 @@ function injectMarkdownToolbar() {
   const superscriptGroup = superscriptBtnPrimary ? superscriptBtnPrimary.closest(".button-group") as HTMLElement : null;
   const listGroup = bulletBtnPrimary ? bulletBtnPrimary.closest(".button-group") as HTMLElement : null;
   const insertGroup = attachBtnPrimary ? attachBtnPrimary.closest(".button-group") as HTMLElement : null;
+  const clozeGroup = clozeBtnPrimary ? clozeBtnPrimary.closest(".button-group") as HTMLElement : null;
   
   const getBtn = (group: HTMLElement | null, index: number) => {
     if (!group) return null;
@@ -350,14 +382,21 @@ function injectMarkdownToolbar() {
   const codeBtn = getBtn(insertGroup, 3);
   const hrBtn = getBtn(insertGroup, 4);
   
+  const clozeBtn = getBtn(clozeGroup, 0);
+  const clozeSameBtn = getBtn(clozeGroup, 1);
+  
   // Tag groups as native format groups so CSS will hide their native children
-  [boldGroup, colorGroup, eraserGroup, superscriptGroup, listGroup, insertGroup].forEach((g) => {
+  [boldGroup, colorGroup, eraserGroup, superscriptGroup, listGroup, insertGroup, clozeGroup].forEach((g) => {
     if (g) g.classList.add("anki-md-native-format-group");
   });
   
   const nativeClass = boldBtn ? boldBtn.className : "toolbar-button";
   
   const customButtons = [
+    // Cloze group
+    { btn: clozeBtn, label: "[::+]", title: "Cloze Deletion (Increment) (Cmd+Shift+C)", cmd: () => insertMarkdownCloze(false), targetGroup: clozeGroup },
+    { btn: clozeSameBtn, label: "[::]", title: "Cloze Deletion (Same Index) (Cmd+Alt+Shift+C)", cmd: () => insertMarkdownCloze(true), targetGroup: clozeGroup },
+
     // 1. Text format group
     { btn: boldBtn, label: "B", title: "Bold (加粗)", cmd: () => wrapInActiveCm5("**", "**"), targetGroup: boldGroup, isBold: true },
     { btn: italicBtn, label: "I", title: "Italic (斜体)", cmd: () => wrapInActiveCm5("*", "*"), targetGroup: boldGroup },
@@ -698,6 +737,16 @@ function attachPreviewTo(container: HTMLElement, cm5?: any) {
     cm5.on("focus", () => {
       activeCm5 = cm5;
     });
+    
+    // Bind keys for cloze deletion
+    if (typeof cm5.getOption === "function" && typeof cm5.setOption === "function") {
+      const keys = cm5.getOption("extraKeys") || {};
+      keys["Cmd-Shift-C"] = () => insertMarkdownCloze(false);
+      keys["Ctrl-Shift-C"] = () => insertMarkdownCloze(false);
+      keys["Cmd-Alt-Shift-C"] = () => insertMarkdownCloze(true);
+      keys["Ctrl-Alt-Shift-C"] = () => insertMarkdownCloze(true);
+      cm5.setOption("extraKeys", keys);
+    }
     
     // Inject the top toolbar group
     injectMarkdownToolbar();
