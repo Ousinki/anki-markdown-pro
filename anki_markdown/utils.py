@@ -21,44 +21,29 @@ def strip_media_refs(text: str) -> str:
         return text
     return MEDIA_REFS_RE.sub("", text)
 
-def append_media_refs(text: str) -> str:
-    """Parse media files from markdown and append a hidden HTML block for Anki's media check."""
+def convert_md_to_html_refs(text: str) -> str:
+    """Convert standard markdown images/audio links to HTML tags for native Anki compatibility."""
     if not text:
         return text
         
+    # Strip any old hidden media reference block from Option A tests
     cleaned = strip_media_refs(text)
     
-    # Extract references
-    files = []
+    # 1. Convert markdown images: ![alt](image.png) or ![](image.png) to <img src="image.png">
+    def replace_img(match):
+        alt = match.group(1)
+        src = urllib.parse.unquote(match.group(2).strip())
+        if src.startswith(("http://", "https://", "data:")):
+            return match.group(0)
+        return f'<img src="{src}">'
+        
+    cleaned = re.sub(r'!\[(.*?)\]\(([^)]+)\)', replace_img, cleaned)
     
-    # 1. Markdown images & links to local files: ![](filename.png) or [file](filename.pdf)
-    # This matches both image links and regular links. We filter out web URLs and ensure it references a file.
-    for match in re.findall(r'\[.*?\]\(([^)]+)\)', cleaned):
-        decoded = urllib.parse.unquote(match.strip())
-        if not decoded.startswith(("http://", "https://", "data:", "#")):
-            # Ensure it looks like a filename (contains a dot for file extension)
-            filename = decoded.split("/")[-1]
-            if "." in filename:
-                files.append(decoded)
-            
-    # 2. Audio tags: [audio:filename] or [sound:filename]
-    for match in re.findall(r'\[(?:sound|audio):([^\]]+)\]', cleaned):
-        files.append(match.strip())
+    # 2. Convert legacy [audio:sound.mp3] to <audio src="sound.mp3" class="anki-md-click-play"></audio>
+    def replace_audio(match):
+        src = match.group(1).strip()
+        return f'<audio src="{src}" class="anki-md-click-play"></audio>'
         
-    if not files:
-        return cleaned
-        
-    # Remove duplicates preserving order
-    seen = set()
-    unique_files = [x for x in files if x and not (x in seen or seen.add(x))]
+    cleaned = re.sub(r'\[audio:([^\]]+)\]', replace_audio, cleaned)
     
-    if not unique_files:
-        return cleaned
-        
-    # Generate hidden HTML block
-    html_parts = []
-    for f in unique_files:
-        html_parts.append(f'<img src="{f}">')
-        
-    refs_block = f'\n\n<div style="display: none;" class="anki-md-media-refs">{"".join(html_parts)}</div>'
-    return cleaned + refs_block
+    return cleaned

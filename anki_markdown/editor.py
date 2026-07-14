@@ -136,7 +136,7 @@ def on_paste_js_message(handled: tuple, message: str, context: object) -> tuple:
             
             mw.col.media.write_data(fname, data)
             
-            context.web.eval(f"if (window.ankiMdInsertText) {{ window.ankiMdInsertText('![]({fname})'); }} else {{ document.execCommand('insertText', false, '![]({fname})'); }}")
+            context.web.eval(f"if (window.ankiMdInsertText) {{ window.ankiMdInsertText('<img src=\"{fname}\">'); }} else {{ document.execCommand('insertText', false, '<img src=\"{fname}\">'); }}")
         except Exception as e:
             print("Error pasting image:", e)
         return (True, None)

@@ -36,12 +36,9 @@ if (originalRequire && !(originalRequire as any)._ankiMdWrapped) {
         resolveMedia: function(html: string) {
           if (active() && activeCm5) {
             let cleanValue = html;
-            if (html.includes("<img")) {
-              cleanValue = html.replace(/<img\s+src="([^"]+)"[^>]*>/gi, "![]($1)");
-            }
             const autoplay = localStorage.getItem("anki-md-audio-autoplay") !== "false";
             if (!autoplay) {
-              cleanValue = cleanValue.replace(/\[sound:([^\]]+)\]/gi, "[audio:$1]");
+              cleanValue = cleanValue.replace(/\[sound:([^\]]+)\]/gi, '<audio src="$1" class="anki-md-click-play"></audio>');
             }
             activeCm5.replaceSelection(cleanValue);
             activeCm5.focus();
@@ -54,12 +51,9 @@ if (originalRequire && !(originalRequire as any)._ankiMdWrapped) {
         insertMedia: function(html: string) {
           if (active() && activeCm5) {
             let cleanValue = html;
-            if (html.includes("<img")) {
-              cleanValue = html.replace(/<img\s+src="([^"]+)"[^>]*>/gi, "![]($1)");
-            }
             const autoplay = localStorage.getItem("anki-md-audio-autoplay") !== "false";
             if (!autoplay) {
-              cleanValue = cleanValue.replace(/\[sound:([^\]]+)\]/gi, "[audio:$1]");
+              cleanValue = cleanValue.replace(/\[sound:([^\]]+)\]/gi, '<audio src="$1" class="anki-md-click-play"></audio>');
             }
             activeCm5.replaceSelection(cleanValue);
             activeCm5.focus();
@@ -1018,7 +1012,7 @@ function showAudioModeMenu(e: Event) {
   
   const optClickPlay = document.createElement("div");
   optClickPlay.className = "anki-md-audio-dropdown-item" + (!isAutoplay ? " active" : "");
-  optClickPlay.innerHTML = `<span>点击播放 ([audio:])</span>${!isAutoplay ? " ✓" : ""}`;
+  optClickPlay.innerHTML = `<span>点击播放 (&lt;audio&gt;)</span>${!isAutoplay ? " ✓" : ""}`;
   optClickPlay.onclick = () => {
     localStorage.setItem("anki-md-audio-autoplay", "false");
     dropdown.remove();
@@ -1069,7 +1063,7 @@ function updateAudioModeIndicator() {
   if (btn) {
     btn.title = isAutoplay 
       ? "Recording mode: Autoplay ([sound:])" 
-      : "Recording mode: Click-to-play ([audio:])";
+      : "Recording mode: Click-to-play (<audio>)";
     btn.classList.toggle("autoplay-active", isAutoplay);
     btn.classList.toggle("clickplay-active", !isAutoplay);
     

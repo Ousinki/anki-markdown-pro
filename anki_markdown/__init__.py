@@ -6,7 +6,7 @@ from aqt.editor import Editor
 
 from .shiki import store, get_config, generate_config_json
 from .settings import show_settings
-from .utils import is_anki_markdown, NOTETYPE, NOTETYPE_CLOZE, append_media_refs
+from .utils import is_anki_markdown, NOTETYPE, NOTETYPE_CLOZE, convert_md_to_html_refs
 from .editor import register_editor_hooks
 from .browser import register_browser_hooks
 
@@ -54,13 +54,13 @@ def html_to_markdown(content: str) -> str:
 
 
 def on_munge_html(txt: str, editor: Editor) -> str:
-    """Convert HTML to markdown and append hidden media refs before saving."""
+    """Convert HTML to markdown and convert markdown media to HTML tags before saving."""
     if not editor.note:
         return txt
     if not is_anki_markdown(editor.note.note_type()):
         return txt
     md = html_to_markdown(txt)
-    return append_media_refs(md)
+    return convert_md_to_html_refs(md)
 
 
 def on_profile_loaded():
@@ -89,7 +89,7 @@ def on_profile_loaded():
 
 
 def migrate_existing_notes():
-    """Scan all markdown notes and ensure they have correct media references appended."""
+    """Scan all markdown notes and migrate markdown media references to standard HTML tags."""
     try:
         updated_count = 0
         for nt in mw.col.models.all():
@@ -100,7 +100,7 @@ def migrate_existing_notes():
                     note = mw.col.get_note(nid)
                     modified = False
                     for i, field in enumerate(note.fields):
-                        new_field = append_media_refs(field)
+                        new_field = convert_md_to_html_refs(field)
                         if new_field != field:
                             note.fields[i] = new_field
                             modified = True
@@ -109,7 +109,7 @@ def migrate_existing_notes():
                         updated_count += 1
                         
         if updated_count > 0:
-            print(f"AnkiMD: Migrated {updated_count} notes to ensure media reference safety.")
+            print(f"AnkiMD: Migrated {updated_count} notes to standard native HTML tags.")
     except Exception as e:
         print("AnkiMD: Error migrating notes:", e)
 
