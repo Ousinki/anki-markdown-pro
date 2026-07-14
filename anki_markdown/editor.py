@@ -97,12 +97,22 @@ def on_editor_load_note(editor: Editor):
 
 def on_paste_js_message(handled: tuple, message: str, context: object) -> tuple:
     """Handle image paste base64 data from JS."""
+    from aqt import mw
     if not isinstance(context, Editor):
         return handled
         
     if message.startswith("anki-md-toast:"):
         import aqt.utils
         aqt.utils.tooltip(message[14:])
+        return (True, None)
+        
+    if message.startswith("anki-md-play-sound:"):
+        filename = message.replace("anki-md-play-sound:", "")
+        from pathlib import Path
+        filepath = Path(mw.col.media.dir()) / filename
+        if filepath.exists():
+            import aqt.sound
+            aqt.sound.av_player.play_file(str(filepath))
         return (True, None)
         
         
@@ -119,7 +129,6 @@ def on_paste_js_message(handled: tuple, message: str, context: object) -> tuple:
             data = base64.b64decode(encoded)
             fname = f"paste-{int(time.time()*1000)}.{ext}"
             
-            from aqt import mw
             mw.col.media.write_data(fname, data)
             
             context.web.eval(f"document.execCommand('insertText', false, '![]({fname})');")

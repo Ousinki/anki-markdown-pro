@@ -22,6 +22,61 @@ const { lifecycle, instances: plainTexts } = require("anki/PlainTextInput") as {
 };
 const active = () => document.body.classList.contains("anki-md-active");
 
+// Hook global require to intercept and wrap the frozen anki/TemplateButtons module.
+// In older Anki versions, media is inserted via insertMedia.
+// In newer Anki versions (e.g. 26.5), it is inserted via resolveMedia.
+// We intercept both to convert media insertion to markdown and insert directly to CodeMirror.
+const originalRequire = (globalThis as any).require;
+if (originalRequire && !(originalRequire as any)._ankiMdWrapped) {
+  const wrappedRequire = function(name: string) {
+    const module = originalRequire(name);
+    if (name === "anki/TemplateButtons") {
+      return {
+        ...module,
+        resolveMedia: function(html: string) {
+          if (active() && activeCm5) {
+            let cleanValue = html;
+            if (html.includes("<img")) {
+              cleanValue = html.replace(/<img\s+src="([^"]+)"[^>]*>/gi, "![]($1)");
+            }
+            const autoplay = localStorage.getItem("anki-md-audio-autoplay") !== "false";
+            if (!autoplay) {
+              cleanValue = cleanValue.replace(/\[sound:([^\]]+)\]/gi, "[audio:$1]");
+            }
+            activeCm5.replaceSelection(cleanValue);
+            activeCm5.focus();
+            return;
+          }
+          if (module.resolveMedia) {
+            module.resolveMedia(html);
+          }
+        },
+        insertMedia: function(html: string) {
+          if (active() && activeCm5) {
+            let cleanValue = html;
+            if (html.includes("<img")) {
+              cleanValue = html.replace(/<img\s+src="([^"]+)"[^>]*>/gi, "![]($1)");
+            }
+            const autoplay = localStorage.getItem("anki-md-audio-autoplay") !== "false";
+            if (!autoplay) {
+              cleanValue = cleanValue.replace(/\[sound:([^\]]+)\]/gi, "[audio:$1]");
+            }
+            activeCm5.replaceSelection(cleanValue);
+            activeCm5.focus();
+            return;
+          }
+          if (module.insertMedia) {
+            module.insertMedia(html);
+          }
+        }
+      };
+    }
+    return module;
+  };
+  (wrappedRequire as any)._ankiMdWrapped = true;
+  (globalThis as any).require = wrappedRequire;
+}
+
 // Editor settings to force-disable for markdown notes
 const settings = ["setCloseHTMLTags", "setShrinkImages", "setMathjaxEnabled"];
 
@@ -202,6 +257,7 @@ function injectMarkdownToolbar() {
   
   // Remove any existing custom buttons first to prevent duplicates/stale renders
   toolbar.querySelectorAll(".anki-md-custom-btn").forEach(el => el.remove());
+  toolbar.querySelectorAll(".anki-md-audio-split-group").forEach(el => el.remove());
   
   const allBtns = Array.from(toolbar.querySelectorAll("button"));
   const findBtn = (checkFn: (btn: HTMLButtonElement) => boolean) => allBtns.find(checkFn) || null;
@@ -380,15 +436,31 @@ function injectMarkdownToolbar() {
       btn: attachBtn,
       label: "Attach",
       title: "Attach pictures/audio/video",
-      cmd: () => clickNativeHelper(attachBtn),
+      cmd: () => {
+        (globalThis as any).pycmd("attach");
+      },
       targetGroup: insertGroup
     },
     {
       btn: micBtn,
       label: "Record",
       title: "Record audio",
-      cmd: () => clickNativeHelper(micBtn),
-      targetGroup: insertGroup
+      cmd: () => {
+        (globalThis as any).pycmd("record");
+      },
+      targetGroup: insertGroup,
+      className: "anki-md-mic-btn"
+    },
+    {
+      btn: colorArrowBtn,
+      label: "v",
+      title: "Audio Insertion Mode (音频插入模式)",
+      cmd: (e: Event) => {
+        (globalThis as any).showAudioModeMenu(e);
+      },
+      targetGroup: insertGroup,
+      isDropdown: true,
+      className: "anki-md-audio-mode-btn"
     },
     {
       btn: codeBtn,
@@ -464,10 +536,27 @@ function injectMarkdownToolbar() {
   customButtons.forEach((cb) => {
     if (!cb.targetGroup) return;
     
+    let parent: HTMLElement = cb.targetGroup;
+    if (cb.className === "anki-md-mic-btn" || cb.className === "anki-md-audio-mode-btn") {
+      let splitGroup = cb.targetGroup.querySelector(".anki-md-audio-split-group") as HTMLElement;
+      if (!splitGroup) {
+        splitGroup = document.createElement("div");
+        splitGroup.className = "anki-md-audio-split-group";
+        splitGroup.style.display = "inline-flex";
+        splitGroup.style.alignItems = "center";
+        cb.targetGroup.appendChild(splitGroup);
+      }
+      parent = splitGroup;
+    }
+    
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = (cb.btn ? cb.btn.className : nativeClass) + " anki-md-custom-btn";
     btn.title = cb.title;
+    
+    if ((cb as any).className) {
+      btn.classList.add((cb as any).className);
+    }
     
     if (cb.isDropdown) {
       btn.classList.add("anki-md-custom-dropdown-btn");
@@ -510,9 +599,9 @@ function injectMarkdownToolbar() {
     btn.addEventListener("mousedown", (e) => {
       e.preventDefault();
       if (btn.hasAttribute("disabled")) return;
-      cb.cmd();
+      cb.cmd(e);
     });
-    cb.targetGroup.appendChild(btn);
+    parent.appendChild(btn);
   });
 
   const updateCustomColorBtn = (customBtn: HTMLButtonElement, nativeBtn: HTMLButtonElement, isHighlight: boolean) => {
@@ -639,6 +728,18 @@ function attachPreviewTo(container: HTMLElement, cm5?: any) {
 
   // Click on preview → focus the CodeMirror editor
   preview.addEventListener("mousedown", (e) => {
+    // If clicking on a replay-button or inside one, play the sound and block edit mode transitions
+    const btn = (e.target as HTMLElement).closest(".replay-button") as HTMLElement;
+    if (btn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const filename = btn.getAttribute("data-filename");
+      if (filename) {
+        playPreviewAudio(e, btn, filename);
+      }
+      return;
+    }
+
     e.preventDefault();
     hidePreview(container);
     const savedCm5 = (container as any)._cm5;
@@ -833,4 +934,139 @@ for (const cmd of queue) {
   if (cmd === 'deactivate') globalThis.ankiMdDeactivate();
 }
 (window as any).__ankiMdQueue = [];
+
+// Audio replay button animation and preview play controller
+function playPreviewAudio(e: Event, el: HTMLElement, filename: string) {
+  e.preventDefault();
+  e.stopPropagation();
+  
+  if (el) {
+    if (el.classList.contains("playing")) return;
+    el.classList.add("playing");
+    setTimeout(() => {
+      el.classList.remove("playing");
+    }, 2000);
+  }
+  
+  (globalThis as any).pycmd("anki-md-play-sound:" + filename);
+}
+(globalThis as any).playPreviewAudio = playPreviewAudio;
+
+if (typeof document !== "undefined") {
+  document.addEventListener("click", (e) => {
+    const btn = (e.target as HTMLElement).closest(".replay-button") as HTMLElement;
+    if (!btn) return;
+    if (btn.classList.contains("playing")) return;
+    
+    btn.classList.add("playing");
+    
+    const localAudio = (btn as any)._localAudio;
+    if (localAudio) {
+      const onEnded = () => {
+        btn.classList.remove("playing");
+        localAudio.removeEventListener("ended", onEnded);
+        localAudio.removeEventListener("pause", onEnded);
+      };
+      localAudio.addEventListener("ended", onEnded);
+      localAudio.addEventListener("pause", onEnded);
+    } else {
+      setTimeout(() => {
+        btn.classList.remove("playing");
+      }, 2000);
+    }
+  });
+}
+
+function showAudioModeMenu(e: Event) {
+  e.stopPropagation();
+  const triggerBtn = (e.currentTarget || e.target) as HTMLElement;
+  
+  // Remove any existing dropdown menus first
+  document.querySelectorAll(".anki-md-audio-dropdown").forEach(el => el.remove());
+  
+  const dropdown = document.createElement("div");
+  dropdown.className = "anki-md-audio-dropdown";
+  
+  // Get current preference
+  const isAutoplay = localStorage.getItem("anki-md-audio-autoplay") !== "false";
+  
+  const optAutoplay = document.createElement("div");
+  optAutoplay.className = "anki-md-audio-dropdown-item" + (isAutoplay ? " active" : "");
+  optAutoplay.innerHTML = `<span>自动播放 ([sound:])</span>${isAutoplay ? " ✓" : ""}`;
+  optAutoplay.onclick = () => {
+    localStorage.setItem("anki-md-audio-autoplay", "true");
+    dropdown.remove();
+    updateAudioModeIndicator();
+  };
+  
+  const optClickPlay = document.createElement("div");
+  optClickPlay.className = "anki-md-audio-dropdown-item" + (!isAutoplay ? " active" : "");
+  optClickPlay.innerHTML = `<span>点击播放 ([audio:])</span>${!isAutoplay ? " ✓" : ""}`;
+  optClickPlay.onclick = () => {
+    localStorage.setItem("anki-md-audio-autoplay", "false");
+    dropdown.remove();
+    updateAudioModeIndicator();
+  };
+  
+  dropdown.appendChild(optAutoplay);
+  dropdown.appendChild(optClickPlay);
+  
+  // Style the dropdown
+  Object.assign(dropdown.style, {
+    position: "fixed",
+    zIndex: "99999",
+    background: "var(--canvas, #fff)",
+    border: "1px solid var(--border, #ccc)",
+    borderRadius: "6px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+    padding: "4px 0",
+    minWidth: "160px",
+    fontFamily: "system-ui, -apple-system, sans-serif",
+    fontSize: "13px",
+    color: "var(--fg, #000)"
+  });
+  
+  document.body.appendChild(dropdown);
+  
+  // Position it under the trigger button
+  const rect = triggerBtn.getBoundingClientRect();
+  dropdown.style.top = `${rect.bottom + 4}px`;
+  dropdown.style.left = `${rect.left}px`;
+  
+  // Close menu on outside click
+  const closeMenu = (ev: MouseEvent) => {
+    if (!dropdown.contains(ev.target as Node)) {
+      dropdown.remove();
+      document.removeEventListener("click", closeMenu);
+    }
+  };
+  setTimeout(() => {
+    document.addEventListener("click", closeMenu);
+  }, 50);
+}
+(globalThis as any).showAudioModeMenu = showAudioModeMenu;
+
+function updateAudioModeIndicator() {
+  const isAutoplay = localStorage.getItem("anki-md-audio-autoplay") !== "false";
+  const btn = document.querySelector(".anki-md-audio-mode-btn") as HTMLElement;
+  if (btn) {
+    btn.title = isAutoplay 
+      ? "Recording mode: Autoplay ([sound:])" 
+      : "Recording mode: Click-to-play ([audio:])";
+    btn.classList.toggle("autoplay-active", isAutoplay);
+    btn.classList.toggle("clickplay-active", !isAutoplay);
+    
+    const svgPath = btn.querySelector("svg path");
+    if (svgPath) {
+      svgPath.setAttribute("fill", isAutoplay ? "currentColor" : "var(--_color-note, #2563eb)");
+    }
+  }
+}
+(globalThis as any).updateAudioModeIndicator = updateAudioModeIndicator;
+
+// Automatically initialize indicator state on mount
+setTimeout(() => {
+  updateAudioModeIndicator();
+}, 200);
+
 

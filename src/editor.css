@@ -78,7 +78,7 @@
 
 /* ── Native Toolbar Auto-Hide ─────────────────────────────────────────── */
 
-.anki-md-active .anki-md-native-format-group > *:not(.anki-md-custom-btn) {
+.anki-md-active .anki-md-native-format-group > *:not(.anki-md-custom-btn):not(.anki-md-audio-split-group) {
   display: none !important;
 }
 
@@ -121,3 +121,156 @@
 .anki-md-custom-btn:disabled svg#mdi-color-helper path {
   fill: var(--fg-subtle, #a0a0a0) !important;
 }
+
+.replay-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  text-decoration: none !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 3px !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  transition: background-color 0.2s !important;
+  cursor: pointer !important;
+}
+
+.replay-button:hover {
+  background-color: rgba(37, 99, 235, 0.1) !important;
+}
+
+.replay-button svg.play-button {
+  width: 22px !important;
+  height: 22px !important;
+  stroke: var(--_color-note, #2563eb) !important;
+  fill: none !important;
+  transition: transform 0.2s !important;
+}
+
+.replay-button svg.play-button path.speaker-body {
+  fill: var(--_color-note, #2563eb) !important;
+  stroke: var(--_color-note, #2563eb) !important;
+  stroke-width: 2px !important;
+}
+
+.replay-button svg.play-button path.wave-1,
+.replay-button svg.play-button path.wave-2 {
+  fill: none !important;
+  stroke: var(--_color-note, #2563eb) !important;
+  stroke-width: 2px !important;
+  stroke-linecap: round !important;
+  transition: opacity 0.2s !important;
+}
+
+.replay-button:not(.playing) svg.play-button path.wave-1,
+.replay-button:not(.playing) svg.play-button path.wave-2 {
+  opacity: 0.5 !important;
+}
+
+.replay-button.playing svg.play-button path.wave-1 {
+  animation: wave-pulse-1 0.8s infinite !important;
+}
+
+.replay-button.playing svg.play-button path.wave-2 {
+  animation: wave-pulse-2 0.8s infinite !important;
+}
+
+@keyframes wave-pulse-1 {
+  0% { opacity: 0.1; }
+  50% { opacity: 1; }
+  100% { opacity: 0.1; }
+}
+
+@keyframes wave-pulse-2 {
+  0% { opacity: 0.1; }
+  30% { opacity: 0.1; }
+  75% { opacity: 1; }
+  100% { opacity: 0.1; }
+}
+
+/* Audio Mode Dropdown Menu */
+.anki-md-audio-dropdown {
+  background: var(--_bg, #fff) !important;
+  color: var(--_fg, #000) !important;
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.15)) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+  animation: dropdown-fade-in 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.night-mode .anki-md-audio-dropdown {
+  background: #2c2c2c !important;
+  color: #f5f5f5 !important;
+  border-color: #444 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+}
+
+@keyframes dropdown-fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.anki-md-audio-dropdown-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 8px 16px !important;
+  cursor: pointer !important;
+  transition: background-color 0.15s, color 0.15s;
+  user-select: none !important;
+}
+
+.anki-md-audio-dropdown-item:hover {
+  background-color: var(--_bg-inset, rgba(37, 99, 235, 0.08)) !important;
+  color: var(--_color-note, #2563eb) !important;
+}
+
+.anki-md-audio-dropdown-item.active {
+  font-weight: 600 !important;
+  color: var(--_color-note, #2563eb) !important;
+}
+
+/* Join Mic and Audio Mode buttons into a unified split button group */
+.anki-md-audio-split-group {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.anki-md-active .anki-md-audio-split-group button.anki-md-mic-btn {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border-right: none !important;
+  margin-right: 0 !important;
+}
+
+.anki-md-active .anki-md-audio-split-group button.anki-md-audio-mode-btn {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  border-left: 1px solid var(--border, rgba(0, 0, 0, 0.15)) !important;
+  margin-left: 0 !important;
+  padding: 0 !important;
+  width: 18px !important;
+  min-width: 18px !important;
+}
+
+/* Ensure night mode border color for the divider line is correct */
+.night-mode .anki-md-active .anki-md-audio-split-group button.anki-md-audio-mode-btn {
+  border-left-color: var(--border, rgba(255, 255, 255, 0.15)) !important;
+}
+
+.anki-md-active .anki-md-audio-split-group button.anki-md-audio-mode-btn.clickplay-active svg,
+.anki-md-active .anki-md-audio-split-group button.anki-md-audio-mode-btn.clickplay-active svg path,
+.anki-md-active .anki-md-audio-split-group button.anki-md-audio-mode-btn.clickplay-active svg polygon {
+  fill: var(--_color-note, #2563eb) !important;
+  stroke: var(--_color-note, #2563eb) !important;
+  color: var(--_color-note, #2563eb) !important;
+}
+

@@ -66,17 +66,36 @@ def fetch_module(url: str, retries: int = 3) -> bytes:
     import time
     import http.client
     import urllib.error
+    import subprocess
     
     ctx = ssl.create_default_context()
+    try:
+        if hasattr(ssl, "TLSVersion"):
+            ctx.minimum_version = ssl.TLSVersion.TLSv1_2
+    except AttributeError:
+        pass
+        
     req = urllib.request.Request(url, headers={"User-Agent": "AnkiMarkdown/1.0"})
     
     last_err = None
     for attempt in range(retries):
         try:
-            with urllib.request.urlopen(req, timeout=30, context=ctx) as resp:
+            with urllib.request.urlopen(req, timeout=15, context=ctx) as resp:
                 return resp.read()
-        except (urllib.error.URLError, http.client.IncompleteRead, ConnectionError) as e:
+        except Exception as e:
             last_err = e
+            # Robust fallback using system curl on macOS/Linux
+            try:
+                res = subprocess.run(
+                    ["curl", "-sSL", "-A", "AnkiMarkdown/1.0", "--max-time", "15", url],
+                    capture_output=True,
+                    check=True
+                )
+                if res.stdout:
+                    return res.stdout
+            except Exception as curl_err:
+                last_err = Exception(f"urllib error: {e}; curl error: {curl_err}")
+                
             if attempt < retries - 1:
                 time.sleep(1)
                 

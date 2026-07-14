@@ -367,6 +367,19 @@ async function upgradeHighlighter(...els: (HTMLElement | null)[]) {
   }
 }
 
+function replaceReplayButtons(container: HTMLElement | null) {
+  if (!container) return;
+  const buttons = container.querySelectorAll(".replay-button");
+  for (const btn of Array.from(buttons)) {
+    if (btn.querySelector("svg.play-button")) continue;
+    btn.innerHTML = `<svg class="play-button" viewBox="0 0 24 24">
+  <path class="speaker-body" d="M11 5L6 9H2v6h4l5 4V5z" />
+  <path class="wave-1" d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+  <path class="wave-2" d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+</svg>`;
+  }
+}
+
 /** Render front/back fields to card DOM. */
 export async function render(front: string, back: string) {
   const wrapper = document.querySelector<HTMLElement>(".anki-md-wrapper");
@@ -380,6 +393,9 @@ export async function render(front: string, back: string) {
 
   if (frontEl) frontEl.innerHTML = renderWithLatex(decode(front));
   if (backEl) backEl.innerHTML = renderWithLatex(decode(back));
+  replaceReplayButtons(frontEl);
+  replaceReplayButtons(backEl);
+
   wrapper?.classList.add("ready");
   // @ts-ignore
   if (typeof MathJax !== "undefined" && MathJax.typesetPromise) MathJax.typesetPromise();
@@ -410,6 +426,9 @@ export async function renderCloze(text: string, extra: string, ordinal: number, 
   const extraText = decode(extra);
   if (backEl && extraText.trim()) backEl.innerHTML = renderWithLatex(extraText);
 
+  replaceReplayButtons(frontEl);
+  replaceReplayButtons(backEl);
+
   wrapper?.classList.add("ready");
   // @ts-ignore
   if (typeof MathJax !== "undefined" && MathJax.typesetPromise) MathJax.typesetPromise();
@@ -420,3 +439,42 @@ export async function renderCloze(text: string, extra: string, ordinal: number, 
   // @ts-ignore
   if (typeof MathJax !== "undefined" && MathJax.typesetPromise) MathJax.typesetPromise();
 }
+
+function playPreviewAudio(e: Event, el: HTMLElement, filename: string) {
+  e.preventDefault();
+  let audio = (el as any)._localAudio;
+  if (!audio) {
+    audio = new Audio(filename);
+    (el as any)._localAudio = audio;
+  }
+  audio.currentTime = 0;
+  audio.play();
+}
+(globalThis as any).playPreviewAudio = playPreviewAudio;
+
+if (typeof document !== "undefined") {
+  document.addEventListener("click", (e) => {
+    const btn = (e.target as HTMLElement).closest(".replay-button") as HTMLElement;
+    if (!btn) return;
+    if (btn.classList.contains("playing")) return;
+    
+    btn.classList.add("playing");
+    
+    const localAudio = (btn as any)._localAudio;
+    if (localAudio) {
+      const onEnded = () => {
+        btn.classList.remove("playing");
+        localAudio.removeEventListener("ended", onEnded);
+        localAudio.removeEventListener("pause", onEnded);
+      };
+      localAudio.addEventListener("ended", onEnded);
+      localAudio.addEventListener("pause", onEnded);
+    } else {
+      // Reviewer play has no localAudio object on DOM node, so animate for 2 seconds
+      setTimeout(() => {
+        btn.classList.remove("playing");
+      }, 2000);
+    }
+  });
+}
+

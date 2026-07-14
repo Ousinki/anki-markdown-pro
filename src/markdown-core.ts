@@ -7,8 +7,56 @@ md.use(mark as never);
 md.use(alerts as never);
 
 // Allow safe inline/block HTML tags, strip anything else
-const ALLOWED_HTML = /^<\/?(font|kbd|img|a|b|i|em|strong|br|code|mark|s|del|sup|sub|span|hr|table|thead|tbody|tr|th|td|abbr)(\s[^>]*)?>$/i;
-const sanitize = (html: string) => (ALLOWED_HTML.test(html.trim()) ? html : "");
+const ALLOWED_TAGS = new Set([
+  "font", "kbd", "img", "a", "b", "i", "em", "strong", "br", "code", "mark",
+  "s", "del", "sup", "sub", "span", "hr", "table", "thead", "tbody", "tr",
+  "th", "td", "abbr", "svg", "circle", "path", "polygon", "rect"
+]);
+
+const sanitize = (html: string): string => {
+  if (typeof document === "undefined") return html;
+  try {
+    const temp = document.createElement("template");
+    temp.innerHTML = html;
+    
+    const sanitizeNode = (node: Node) => {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const el = node as HTMLElement;
+        const tag = el.tagName.toLowerCase();
+        if (!ALLOWED_TAGS.has(tag)) {
+          el.parentNode?.removeChild(el);
+          return;
+        }
+        
+        // Remove unsafe event handlers, except onclick on replay-buttons
+        const attrs = Array.from(el.attributes);
+        for (const attr of attrs) {
+          const name = attr.name.toLowerCase();
+          if (name.startsWith("on")) {
+            const isReplayBtn = tag === "a" && el.classList.contains("replay-button");
+            if (!isReplayBtn) {
+              el.removeAttribute(attr.name);
+            }
+          }
+        }
+        
+        const children = Array.from(el.childNodes);
+        for (const child of children) {
+          sanitizeNode(child);
+        }
+      }
+    };
+    
+    const children = Array.from(temp.content.childNodes);
+    for (const child of children) {
+      sanitizeNode(child);
+    }
+    return temp.innerHTML;
+  } catch (e) {
+    return html;
+  }
+};
+
 md.renderer.rules.html_inline = (tokens, idx) => sanitize(tokens[idx].content);
 md.renderer.rules.html_block = (tokens, idx) => sanitize(tokens[idx].content);
 
@@ -40,6 +88,18 @@ export function renderWithLatex(text: string): string {
   // Convert [Text]{Tooltip} into HTML <abbr> tags
   t = t.replace(/\[([^\]]+)\]\{([^\}]+)\}/g, (_, textVal, titleVal) => {
     return `<abbr data-title="${titleVal.trim()}">${textVal}</abbr>`;
+  });
+
+  // Convert [audio:filename.mp3] into a modern play button that does NOT autoplay in Anki
+  t = t.replace(/\[audio:([^\]]+)\]/g, (_, filename) => {
+    const escFilename = filename.replace(/'/g, "\\'");
+    return `<a class="replay-button sound" href="#" data-filename="${escFilename}" onclick="event.preventDefault(); (globalThis.playPreviewAudio || window.playPreviewAudio)(event, this, '${escFilename}');">
+  <svg class="play-button" viewBox="0 0 24 24">
+    <path class="speaker-body" d="M11 5L6 9H2v6h4l5 4V5z" />
+    <path class="wave-1" d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+    <path class="wave-2" d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+  </svg>
+</a>`;
   });
 
   // 3. Run markdown on safe text

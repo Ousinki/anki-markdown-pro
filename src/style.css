@@ -274,3 +274,74 @@ span.cloze-active:not(:has(code)) {
     --fade-right: #000;
   }
 }
+
+.replay-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  text-decoration: none !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 3px !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  transition: background-color 0.2s !important;
+  cursor: pointer !important;
+}
+
+.replay-button:hover {
+  background-color: rgba(37, 99, 235, 0.1) !important;
+}
+
+.replay-button svg.play-button {
+  width: 22px !important;
+  height: 22px !important;
+  stroke: var(--_color-note, #2563eb) !important;
+  fill: none !important;
+  transition: transform 0.2s !important;
+}
+
+.replay-button svg.play-button path.speaker-body {
+  fill: var(--_color-note, #2563eb) !important;
+  stroke: var(--_color-note, #2563eb) !important;
+  stroke-width: 2px !important;
+}
+
+.replay-button svg.play-button path.wave-1,
+.replay-button svg.play-button path.wave-2 {
+  fill: none !important;
+  stroke: var(--_color-note, #2563eb) !important;
+  stroke-width: 2px !important;
+  stroke-linecap: round !important;
+  transition: opacity 0.2s !important;
+}
+
+.replay-button:not(.playing) svg.play-button path.wave-1,
+.replay-button:not(.playing) svg.play-button path.wave-2 {
+  opacity: 0.5 !important;
+}
+
+.replay-button.playing svg.play-button path.wave-1 {
+  animation: wave-pulse-1 0.8s infinite !important;
+}
+
+.replay-button.playing svg.play-button path.wave-2 {
+  animation: wave-pulse-2 0.8s infinite !important;
+}
+
+@keyframes wave-pulse-1 {
+  0% { opacity: 0.1; }
+  50% { opacity: 1; }
+  100% { opacity: 0.1; }
+}
+
+@keyframes wave-pulse-2 {
+  0% { opacity: 0.1; }
+  30% { opacity: 0.1; }
+  75% { opacity: 1; }
+  100% { opacity: 0.1; }
+}
+
