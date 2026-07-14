@@ -1,5 +1,15 @@
 @import "./_markdown-base.css";
 
+/* Force hide native HTML5 audio players/spacers on all platforms (including iOS) */
+audio {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  visibility: hidden !important;
+  position: absolute !important;
+  pointer-events: none !important;
+}
+
 .anki-md-wrapper {
   font-family:
     system-ui,
