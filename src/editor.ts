@@ -740,11 +740,23 @@ function attachPreviewTo(container: HTMLElement, cm5?: any) {
     
     // Bind keys for cloze deletion
     if (typeof cm5.getOption === "function" && typeof cm5.setOption === "function") {
-      const keys = cm5.getOption("extraKeys") || {};
-      keys["Cmd-Shift-C"] = () => insertMarkdownCloze(false);
-      keys["Ctrl-Shift-C"] = () => insertMarkdownCloze(false);
-      keys["Cmd-Alt-Shift-C"] = () => insertMarkdownCloze(true);
-      keys["Ctrl-Alt-Shift-C"] = () => insertMarkdownCloze(true);
+      const rawKeys: Record<string, any> = {};
+      rawKeys["Cmd-Shift-C"] = () => insertMarkdownCloze(false);
+      rawKeys["Ctrl-Shift-C"] = () => insertMarkdownCloze(false);
+      rawKeys["Cmd-Alt-Shift-C"] = () => insertMarkdownCloze(true);
+      rawKeys["Ctrl-Alt-Shift-C"] = () => insertMarkdownCloze(true);
+      
+      let keys = cm5.getOption("extraKeys") || {};
+      if (cm5.constructor && typeof (cm5.constructor as any).normalizeKeyMap === "function") {
+        const normalized = (cm5.constructor as any).normalizeKeyMap(rawKeys);
+        keys = { ...keys, ...normalized };
+      } else {
+        // CodeMirror 5 modifier order: Shift-Cmd-Ctrl-Alt
+        keys["Shift-Cmd-C"] = () => insertMarkdownCloze(false);
+        keys["Shift-Ctrl-C"] = () => insertMarkdownCloze(false);
+        keys["Shift-Cmd-Alt-C"] = () => insertMarkdownCloze(true);
+        keys["Shift-Ctrl-Alt-C"] = () => insertMarkdownCloze(true);
+      }
       cm5.setOption("extraKeys", keys);
     }
     
