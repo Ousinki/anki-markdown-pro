@@ -361,11 +361,16 @@ def _exit_add_mode(browser, restore_selection=True, discard=True):
             pass
 
 def _update_button_styles(browser):
+    is_night = False
     try:
-        from aqt import theme_manager
+        from aqt.theme import theme_manager
         is_night = theme_manager.night_mode
     except Exception:
-        is_night = False
+        try:
+            from aqt import mw
+            is_night = mw.pm.profile.get("nightMode", False)
+        except Exception:
+            pass
         
     if hasattr(browser, "_anki_md_add_btn"):
         btn = browser._anki_md_add_btn
