@@ -90,35 +90,28 @@ export function renderWithLatex(text: string): string {
     return `<abbr data-title="${titleVal.trim()}">${textVal}</abbr>`;
   });
 
-  // Convert [audio:filename.mp3] into a modern play button that does NOT autoplay in Anki (legacy compatibility)
-  t = t.replace(/\[audio:([^\]]+)\]/g, (_, filename) => {
-    const escFilename = filename.replace(/'/g, "\\'");
-    return `<a class="replay-button sound" href="#" data-filename="${escFilename}" onclick="event.preventDefault(); (globalThis.playPreviewAudio || window.playPreviewAudio)(event, this, '${escFilename}');">
-  <svg class="play-button" viewBox="0 0 24 24">
-    <path class="speaker-body" d="M11 5L6 9H2v6h4l5 4V5z" />
-    <path class="wave-1" d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-    <path class="wave-2" d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-  </svg>
-</a>`;
-  });
-
-  // Convert <audio ... class="anki-md-click-play"></audio> into a modern play button
+  // Convert <audio ... class="anki-md-click-play"></audio> to [audio:...] inline placeholders BEFORE markdown render.
+  // This prevents Markdown-It from treating <audio> as an HTML block and splitting the paragraph.
   t = t.replace(/<audio\s+([^>]*?class="anki-md-click-play"[^>]*?)(?:\/>|>(?:<\/audio>)?)/gi, (match, attrs) => {
     const srcMatch = attrs.match(/src="([^"]+)"/i);
     if (!srcMatch) return match;
-    const filename = srcMatch[1];
-    const escFilename = filename.replace(/'/g, "\\'");
-    return `<a class="replay-button sound" href="#" data-filename="${escFilename}" onclick="event.preventDefault(); (globalThis.playPreviewAudio || window.playPreviewAudio)(event, this, '${escFilename}');">
-  <svg class="play-button" viewBox="0 0 24 24">
-    <path class="speaker-body" d="M11 5L6 9H2v6h4l5 4V5z" />
-    <path class="wave-1" d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-    <path class="wave-2" d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-  </svg>
-</a>`;
+    return `[audio:${srcMatch[1]}]`;
   });
 
   // 3. Run markdown on safe text
   let html = md.render(t);
+
+  // Convert [audio:filename.mp3] (both legacy and placeholders) into inline replay buttons
+  html = html.replace(/\[audio:([^\]]+)\]/g, (_, filename) => {
+    const escFilename = filename.replace(/'/g, "\\'");
+    return `<a class="replay-button sound" href="#" data-filename="${escFilename}" onclick="event.preventDefault(); (globalThis.playPreviewAudio || window.playPreviewAudio)(event, this, '${escFilename}');">
+  <svg class="play-button" viewBox="0 0 24 24">
+    <path class="speaker-body" d="M11 5L6 9H2v6h4l5 4V5z" />
+    <path class="wave-1" d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+    <path class="wave-2" d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+  </svg>
+</a>`;
+  });
 
   // 4. Restore native MathJax delimiters (placeholders survive markdown untouched)
   html = html.replace(/\u0002ANKI_MATH_(\d+)\u0003/g, (_, i) => stash[parseInt(i)]);
