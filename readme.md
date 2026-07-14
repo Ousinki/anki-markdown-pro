@@ -18,7 +18,10 @@ Write flashcards in Markdown with full [syntax highlighting](docs.md#code-blocks
 
 - **Syntax highlighting** with 300+ languages and 60+ themes, only your selections are downloaded and synced
 - **Advanced code annotations** including line highlighting, word highlighting, focus mode, and error/warning markers
-- **Full Markdown** with bold, italic, lists, blockquotes, tables, images, alerts, and more
+- **Full Markdown** with bold, italic, lists, blockquotes, tables, images, alerts, **premium `<kbd>` 3D keycap styling**, and more
+- **Abbreviations & Tooltips (`[text]{tooltip}`)**: Native inline tooltip syntax. Displays an elegant glassmorphism floating card on hover or tap, featuring smart edge boundary collision detection.
+- **Dual-Mode Audio Playback**: Supports pasted or recorded audio with standard autoplay or click-to-play mode (renders as an inline speaker icon while automatically hiding native HTML5 player spacers on iOS/mobile). Includes a toolbar selector to toggle the insertion mode.
+- **Markdown Cloze Deletion**: Native support for Markdown cloze deletion cards (`Anki Markdown Cloze` note type), featuring seamlessly integrated cloze shortcuts (`Cmd/Ctrl+Shift+C`) and toolbar buttons inside the CodeMirror editor with smart index incrementing and same-index cloze support
 - **Full keyboard browser navigation**: Card browser supports dual-axis direction keys. Left/Right to change cards, Up/Down to change decks/tags. Sidebar selection updates the card list automatically without manual mouse clicks.
 - **Browser-Add Integration (Inline Card Addition)**: Appends a modern "+ Add Note" button below the card list, allowing card creation directly in the right-hand editor pane with `Cmd+Enter` saving and auto-cycling. Supports smart deck targeting based on sidebar selections.
 - **Clean card design** with polished light/dark styling that matches Anki's native UI
