@@ -448,7 +448,7 @@ function injectMarkdownToolbar() {
         activeCm5.focus();
       },
       targetGroup: insertGroup,
-      svg: `<svg viewBox="0 0 24 24"><path d="M11 9h2v2h-2zm0 4h2v4h-2zm1-11A10 10 0 1 0 22 12 10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" fill="currentColor"></path></svg>`
+      svg: `<svg viewBox="0 0 24 24"><path transform="scale(-1, 1) translate(-24, 0)" d="M20,2H4C2.9,2,2,2.9,2,4v12c0,1.1,0.9,2,2,2h14l4,4V4C22,2.9,21.1,2,20,2z M20,16H5.2L4,17.2V4h16V16z M6,7h12v2H6V7z M6,11h10v2H6V11z" fill="currentColor"></path></svg>`
     }
   ];
   
