@@ -18,7 +18,8 @@ Write flashcards in Markdown with full [syntax highlighting](docs.md#code-blocks
 
 - **Syntax highlighting** with 300+ languages and 60+ themes, only your selections are downloaded and synced
 - **Advanced code annotations** including line highlighting, word highlighting, focus mode, and error/warning markers
-- **Full Markdown** with bold, italic, lists, blockquotes, tables, images, alerts, **premium `<kbd>` 3D keycap styling**, and more
+- **Formula Support (MathJax & mhchem)**: Built-in native MathJax formula rendering supporting standard `$` and `$$` delimiters, with zero-configuration out-of-the-box support for `mhchem` chemical equations (`\ce{...}`)
+- **Full Markdown** with bold, italic, lists, blockquotes, tables, images, alerts, **highlight text marking (`==highlight==`)**, **premium `<kbd>` 3D keycap styling**, and more
 - **Abbreviations & Tooltips (`[text]{tooltip}`)**: Native inline tooltip syntax. Displays an elegant glassmorphism floating card on hover or tap, featuring smart edge boundary collision detection.
 - **Dual-Mode Audio Playback**: Supports pasted or recorded audio with standard autoplay or click-to-play mode (renders as an inline speaker icon while automatically hiding native HTML5 player spacers on iOS/mobile). Includes a toolbar selector to toggle the insertion mode.
 - **Markdown Cloze Deletion**: Native support for Markdown cloze deletion cards (`Anki Markdown Cloze` note type), featuring seamlessly integrated cloze shortcuts (`Cmd/Ctrl+Shift+C`) and toolbar buttons inside the CodeMirror editor with smart index incrementing and same-index cloze support
