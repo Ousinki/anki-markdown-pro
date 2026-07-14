@@ -859,6 +859,9 @@ function attachWhenReady(api: PlainTextInputAPI) {
   api.codeMirror.editor
     .then((cm5: any) => {
       if (!active()) return;
+      if (typeof cm5.setOption === "function") {
+        cm5.setOption("mode", "htmlmixed");
+      }
       const wrapperEl = cm5.getWrapperElement?.() as HTMLElement | undefined;
       if (wrapperEl) {
         const container = wrapperEl.closest<HTMLElement>(".plain-text-input");
@@ -963,7 +966,7 @@ globalThis.ankiMdActivate = async () => {
   document.body.classList.add("anki-md-active");
   for (const fn of settings) globalThis[fn](false);
   await setPlainText(true);
-  await setOption("mode", "null");
+  await setOption("mode", "htmlmixed");
   ensureMathJax();
   startDomObserver();
   installNavListener();
@@ -994,7 +997,7 @@ loaded.then(() => {
 
 lifecycle.onMount((api: PlainTextInputAPI) => {
   if (active()) {
-    api.codeMirror.setOption("mode", "null");
+    api.codeMirror.setOption("mode", "htmlmixed");
     attachWhenReady(api);
   }
 });
