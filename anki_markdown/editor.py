@@ -105,6 +105,7 @@ def on_paste_js_message(handled: tuple, message: str, context: object) -> tuple:
         aqt.utils.tooltip(message[14:])
         return (True, None)
         
+        
     if message.startswith("anki-md-paste:"):
         b64_data = message[14:]
         try:

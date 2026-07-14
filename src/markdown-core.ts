@@ -7,7 +7,7 @@ md.use(mark as never);
 md.use(alerts as never);
 
 // Allow safe inline/block HTML tags, strip anything else
-const ALLOWED_HTML = /^<\/?(kbd|img|a|b|i|em|strong|br|code|mark|s|del|sup|sub|span|hr|table|thead|tbody|tr|th|td)(\s[^>]*)?>$/i;
+const ALLOWED_HTML = /^<\/?(font|kbd|img|a|b|i|em|strong|br|code|mark|s|del|sup|sub|span|hr|table|thead|tbody|tr|th|td)(\s[^>]*)?>$/i;
 const sanitize = (html: string) => (ALLOWED_HTML.test(html.trim()) ? html : "");
 md.renderer.rules.html_inline = (tokens, idx) => sanitize(tokens[idx].content);
 md.renderer.rules.html_block = (tokens, idx) => sanitize(tokens[idx].content);

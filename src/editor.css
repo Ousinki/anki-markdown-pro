@@ -75,3 +75,49 @@
 .anki-md-preview.visible {
   display: block;
 }
+
+/* ── Native Toolbar Auto-Hide ─────────────────────────────────────────── */
+
+.anki-md-active .anki-md-native-format-group > *:not(.anki-md-custom-btn) {
+  display: none !important;
+}
+
+.anki-md-active .anki-md-native-hide-group {
+  display: none !important;
+}
+
+.anki-md-custom-btn {
+  font-family: inherit !important;
+  margin-right: 2px !important;
+}
+
+.anki-md-custom-dropdown-btn {
+  min-width: 16px !important;
+  width: 16px !important;
+  padding: 0 !important;
+  margin-left: -4px !important;
+  margin-right: 4px !important;
+}
+
+.anki-md-custom-btn:disabled,
+.anki-md-custom-dropdown-btn:disabled {
+  color: var(--fg-subtle, #a0a0a0) !important;
+  cursor: default !important;
+  pointer-events: none !important;
+}
+
+.anki-md-custom-btn:disabled > *,
+.anki-md-custom-dropdown-btn:disabled > * {
+  color: var(--fg-subtle, #a0a0a0) !important;
+  fill: var(--fg-subtle, #a0a0a0) !important;
+  opacity: 0.70 !important;
+}
+
+.anki-md-custom-btn:disabled svg rect.anki-md-mark-bg {
+  fill: var(--fg-subtle, #a0a0a0) !important;
+  fill-opacity: 0.15 !important;
+}
+
+.anki-md-custom-btn:disabled svg#mdi-color-helper path {
+  fill: var(--fg-subtle, #a0a0a0) !important;
+}

@@ -207,6 +207,15 @@ def _get_active_deck_id(browser):
     return browser.mw.col.decks.current_id()
 
 def _enter_add_mode(browser):
+    if getattr(browser, "_anki_md_add_mode", False):
+        try:
+            browser.editor.focus_field(0)
+        except Exception:
+            pass
+        return
+        
+    # Save current selection before entering add mode
+    browser._anki_md_pre_add_selected_cards = browser.selected_cards()
     browser._anki_md_add_mode = True
     
     # Resolve note type model and active deck
@@ -225,9 +234,46 @@ def _enter_add_mode(browser):
         
     browser._anki_md_current_temp_note = note
     browser.editor.set_note(note)
-    
+
+    # Ensure the editor and all its parent widgets are visible
     try:
-        browser.editor.widget.show()
+        curr = browser.editor.widget
+        while curr and curr != browser:
+            curr.show()
+            curr.setVisible(True)
+            curr = curr.parentWidget()
+    except Exception:
+        pass
+
+    # Ensure any parent QSplitter containing the editor is expanded
+    try:
+        from aqt.qt import QSplitter
+        curr = browser.editor.widget
+        while curr and curr != browser:
+            parent = curr.parentWidget()
+            if isinstance(parent, QSplitter):
+                idx = parent.indexOf(curr)
+                if idx != -1:
+                    sizes = parent.sizes()
+                    if idx < len(sizes) and sizes[idx] == 0:
+                        saved_sizes = getattr(browser, "_anki_md_last_editor_splitter_sizes", None)
+                        if saved_sizes and len(saved_sizes) == len(sizes):
+                            parent.setSizes(saved_sizes)
+                        else:
+                            total = sum(sizes)
+                            if total > 0:
+                                # Allocate 40% of the splitter width to the editor pane
+                                alloc = int(total * 0.40)
+                                sizes[idx] = alloc
+                                
+                                # Reduce the largest pane's size to balance it out
+                                largest_idx = 0
+                                for k in range(len(sizes)):
+                                    if k != idx and sizes[k] > sizes[largest_idx]:
+                                        largest_idx = k
+                                sizes[largest_idx] = max(50, sizes[largest_idx] - alloc)
+                                parent.setSizes(sizes)
+            curr = parent
     except Exception:
         pass
         
@@ -269,24 +315,166 @@ def _exit_add_mode(browser, restore_selection=True, discard=True):
     if hasattr(browser, "_anki_md_add_buttons"):
         browser._anki_md_add_buttons.hide()
         
-    if restore_selection:
-        card_ids = browser.selected_cards()
-        if card_ids:
-            try:
-                card = browser.mw.col.get_card(card_ids[0])
-                browser.editor.set_note(card.note())
-            except Exception:
-                pass
-                
+    # 1. Delete the temporary note from the collection DB first!
     if discard and temp_note:
         try:
             browser.mw.col.remove_notes([temp_note.id])
         except Exception:
             pass
+            
+    # 2. Refresh the search so that the deleted note is removed from the card list!
+    try:
+        browser.search()
+    except Exception:
+        pass
+        
+    # 3. Now restore the selection to the previous card or select the first card
+    if restore_selection:
+        try:
+            from aqt.qt import QItemSelectionModel
+            model = browser.table.model
+            view = browser.table._view
+            
+            # Find previous selected card ID
+            prev_ids = getattr(browser, "_anki_md_pre_add_selected_cards", None)
+            target_card_id = prev_ids[0] if prev_ids else None
+            
+            target_row = -1
+            if target_card_id:
+                for row in range(model.rowCount()):
+                    model_index = model.index(row, 0)
+                    item_id = model.get_item(model_index)
+                    if int(item_id) == int(target_card_id):
+                        target_row = row
+                        break
+                        
+            # If not found or no target, fallback to first row
+            if target_row == -1 and model.rowCount() > 0:
+                target_row = 0
+                
+            if target_row != -1:
+                model_index = model.index(target_row, 0)
+                view.selectionModel().select(model_index, QItemSelectionModel.SelectionFlag.ClearAndSelect | QItemSelectionModel.SelectionFlag.Rows)
+                view.setCurrentIndex(model_index)
+                view.scrollTo(model_index)
+        except Exception:
+            pass
 
-def _on_save_shortcut_triggered(browser):
-    if getattr(browser, "_anki_md_add_mode", False):
-        _save_new_note(browser)
+def _update_button_styles(browser):
+    try:
+        from aqt import theme_manager
+        is_night = theme_manager.night_mode
+    except Exception:
+        is_night = False
+        
+    if hasattr(browser, "_anki_md_add_btn"):
+        btn = browser._anki_md_add_btn
+        if is_night:
+            btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #2b2b2b;
+                    color: #ffffff;
+                    border: 1px solid #3c3f41;
+                    border-radius: 4px;
+                    padding: 6px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #353535;
+                }
+                QPushButton:pressed {
+                    background-color: #202020;
+                }
+            """)
+        else:
+            btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #f3f4f6;
+                    color: #1f2937;
+                    border: 1px solid #d1d5db;
+                    border-radius: 4px;
+                    padding: 6px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #e5e7eb;
+                }
+                QPushButton:pressed {
+                    background-color: #d1d5db;
+                }
+            """)
+
+    if hasattr(browser, "_anki_md_save_btn") and hasattr(browser, "_anki_md_cancel_btn"):
+        save_btn = browser._anki_md_save_btn
+        cancel_btn = browser._anki_md_cancel_btn
+        if is_night:
+            save_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #318aff;
+                    color: #ffffff;
+                    border: 1px solid #1a5bb8;
+                    border-radius: 5px;
+                    padding: 8px 16px;
+                    font-size: 13px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #4c9aff;
+                }
+                QPushButton:pressed {
+                    background-color: #1a5bb8;
+                }
+            """)
+            cancel_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #3c3c3c;
+                    color: #dcdcdc;
+                    border: 1px solid #555555;
+                    border-radius: 5px;
+                    padding: 8px 16px;
+                    font-size: 13px;
+                }
+                QPushButton:hover {
+                    background-color: #4e4e4e;
+                }
+                QPushButton:pressed {
+                    background-color: #2b2b2b;
+                }
+            """)
+        else:
+            save_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #2563eb;
+                    color: #ffffff;
+                    border: 1px solid #1d4ed8;
+                    border-radius: 5px;
+                    padding: 8px 16px;
+                    font-size: 13px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #3b82f6;
+                }
+                QPushButton:pressed {
+                    background-color: #1d4ed8;
+                }
+            """)
+            cancel_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #f3f4f6;
+                    color: #1f2937;
+                    border: 1px solid #d1d5db;
+                    border-radius: 5px;
+                    padding: 8px 16px;
+                    font-size: 13px;
+                }
+                QPushButton:hover {
+                    background-color: #e5e7eb;
+                }
+                QPushButton:pressed {
+                    background-color: #d1d5db;
+                }
+            """)
 
 def _on_browser_open(browser):
     """Install key filters on correct widgets when Browser opens and shift focus to card list."""
@@ -400,41 +588,6 @@ def _on_browser_open(browser):
         # 5. Inject "+ Add Note" button below the card list
         if not hasattr(browser, "_anki_md_add_btn"):
             add_btn = QPushButton("+ Add Note")
-            is_night = browser.mw.pm.night_mode()
-            if is_night:
-                add_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color: #2b2b2b;
-                        color: #ffffff;
-                        border: 1px solid #3c3f41;
-                        border-radius: 4px;
-                        padding: 6px;
-                        font-weight: bold;
-                    }
-                    QPushButton:hover {
-                        background-color: #353535;
-                    }
-                    QPushButton:pressed {
-                        background-color: #202020;
-                    }
-                """)
-            else:
-                add_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color: #f3f4f6;
-                        color: #1f2937;
-                        border: 1px solid #d1d5db;
-                        border-radius: 4px;
-                        padding: 6px;
-                        font-weight: bold;
-                    }
-                    QPushButton:hover {
-                        background-color: #e5e7eb;
-                    }
-                    QPushButton:pressed {
-                        background-color: #d1d5db;
-                    }
-                """)
             add_btn.clicked.connect(lambda: _enter_add_mode(browser))
             
             # Find the parent widget of table_view to add button at the bottom of the table area layout
@@ -463,76 +616,6 @@ def _on_browser_open(browser):
             
             save_btn = QPushButton("Save Note")
             cancel_btn = QPushButton("Cancel")
-            
-            is_night = browser.mw.pm.night_mode()
-            if is_night:
-                save_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color: #318aff;
-                        color: #ffffff;
-                        border: 1px solid #1a5bb8;
-                        border-radius: 5px;
-                        padding: 8px 16px;
-                        font-size: 13px;
-                        font-weight: bold;
-                    }
-                    QPushButton:hover {
-                        background-color: #4c9aff;
-                    }
-                    QPushButton:pressed {
-                        background-color: #1a5bb8;
-                    }
-                """)
-                cancel_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color: #3c3c3c;
-                        color: #dcdcdc;
-                        border: 1px solid #555555;
-                        border-radius: 5px;
-                        padding: 8px 16px;
-                        font-size: 13px;
-                    }
-                    QPushButton:hover {
-                        background-color: #4e4e4e;
-                    }
-                    QPushButton:pressed {
-                        background-color: #2b2b2b;
-                    }
-                """)
-            else:
-                save_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color: #2563eb;
-                        color: #ffffff;
-                        border: 1px solid #1d4ed8;
-                        border-radius: 5px;
-                        padding: 8px 16px;
-                        font-size: 13px;
-                        font-weight: bold;
-                    }
-                    QPushButton:hover {
-                        background-color: #3b82f6;
-                    }
-                    QPushButton:pressed {
-                        background-color: #1d4ed8;
-                    }
-                """)
-                cancel_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color: #f3f4f6;
-                        color: #1f2937;
-                        border: 1px solid #d1d5db;
-                        border-radius: 5px;
-                        padding: 8px 16px;
-                        font-size: 13px;
-                    }
-                    QPushButton:hover {
-                        background-color: #e5e7eb;
-                    }
-                    QPushButton:pressed {
-                        background-color: #d1d5db;
-                    }
-                """)
             
             btn_layout.addWidget(save_btn)
             btn_layout.addWidget(cancel_btn)
@@ -569,6 +652,93 @@ def _on_browser_open(browser):
             shortcut_mac = QShortcut(QKeySequence("Meta+Return"), browser)
             shortcut_mac.activated.connect(lambda: _on_save_shortcut_triggered(browser))
             browser._anki_md_save_shortcut_mac = shortcut_mac
+            
+        # 8. Apply button stylesheets
+        _update_button_styles(browser)
+
+        # 9. Connect selection model signals to exit add mode safely if user clicks elsewhere
+        try:
+            if hasattr(browser, "table") and hasattr(browser.table, "_view"):
+                browser.table._view.selectionModel().selectionChanged.connect(
+                    lambda *args: _exit_add_mode(browser, restore_selection=False, discard=True)
+                    if getattr(browser, "_anki_md_add_mode", False) else None
+                )
+            if hasattr(browser, "sidebar"):
+                browser.sidebar.selectionModel().selectionChanged.connect(
+                    lambda *args: _exit_add_mode(browser, restore_selection=False, discard=True)
+                    if getattr(browser, "_anki_md_add_mode", False) else None
+                )
+        except Exception:
+            pass
+
+        # 10. Register an event listener on browser window for theme changes and close events
+        class ThemeChangeListener(QObject):
+            def eventFilter(self, obj, event):
+                try:
+                    event_type = event.type()
+                    type_str = str(event_type)
+                    if event_type == QEvent.Type.Close:
+                        _exit_add_mode(browser, restore_selection=False, discard=True)
+                    elif "PaletteChange" in type_str or "StyleChange" in type_str or event_type in (QEvent.Type.PaletteChange, QEvent.Type.StyleChange):
+                        _update_button_styles(browser)
+                except Exception:
+                    pass
+                return False
+
+        browser._anki_md_theme_listener = ThemeChangeListener(browser)
+        browser.installEventFilter(browser._anki_md_theme_listener)
+
+        # 11. Initialize last known splitter sizes if the editor is currently visible
+        try:
+            from aqt.qt import QSplitter
+            curr = browser.editor.widget
+            while curr and curr != browser:
+                parent = curr.parentWidget()
+                if isinstance(parent, QSplitter):
+                    idx = parent.indexOf(curr)
+                    if idx != -1:
+                        sizes = parent.sizes()
+                        if idx < len(sizes) and sizes[idx] > 0:
+                            browser._anki_md_last_editor_splitter_sizes = sizes
+                            break
+                curr = parent
+        except Exception:
+            pass
+
+        # 12. Register an event listener on the editor widget to clean up Add Mode if collapsed/hidden
+        class EditorCollapseListener(QObject):
+            def eventFilter(self, obj, event):
+                try:
+                    event_type = event.type()
+                    # Hide event or Resize event where width/height becomes 0
+                    if event_type == QEvent.Type.Hide:
+                        if getattr(browser, "_anki_md_add_mode", False):
+                            _exit_add_mode(browser, restore_selection=True, discard=True)
+                    elif event_type == QEvent.Type.Resize:
+                        rect = browser.editor.widget.rect()
+                        if rect.width() == 0 or rect.height() == 0:
+                            if getattr(browser, "_anki_md_add_mode", False):
+                                _exit_add_mode(browser, restore_selection=True, discard=True)
+                        else:
+                            # The editor has a non-zero size, save current splitter sizes
+                            from aqt.qt import QSplitter
+                            curr = browser.editor.widget
+                            while curr and curr != browser:
+                                parent = curr.parentWidget()
+                                if isinstance(parent, QSplitter):
+                                    idx = parent.indexOf(curr)
+                                    if idx != -1:
+                                        sizes = parent.sizes()
+                                        if idx < len(sizes) and sizes[idx] > 0:
+                                            browser._anki_md_last_editor_splitter_sizes = sizes
+                                            break
+                                curr = parent
+                except Exception:
+                    pass
+                return False
+
+        browser._anki_md_editor_collapse_listener = EditorCollapseListener(browser)
+        browser.editor.widget.installEventFilter(browser._anki_md_editor_collapse_listener)
 
     except Exception as e:
         import traceback
