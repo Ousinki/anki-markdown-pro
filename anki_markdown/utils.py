@@ -31,12 +31,15 @@ def append_media_refs(text: str) -> str:
     # Extract references
     files = []
     
-    # 1. Markdown images: ![](filename) or ![alt](filename)
-    # We match everything inside the parentheses, but stop if it's a URL
-    for match in re.findall(r'!\[.*?\]\(([^)]+)\)', cleaned):
+    # 1. Markdown images & links to local files: ![](filename.png) or [file](filename.pdf)
+    # This matches both image links and regular links. We filter out web URLs and ensure it references a file.
+    for match in re.findall(r'\[.*?\]\(([^)]+)\)', cleaned):
         decoded = urllib.parse.unquote(match.strip())
-        if not decoded.startswith(("http://", "https://", "data:")):
-            files.append(decoded)
+        if not decoded.startswith(("http://", "https://", "data:", "#")):
+            # Ensure it looks like a filename (contains a dot for file extension)
+            filename = decoded.split("/")[-1]
+            if "." in filename:
+                files.append(decoded)
             
     # 2. Audio tags: [audio:filename] or [sound:filename]
     for match in re.findall(r'\[(?:sound|audio):([^\]]+)\]', cleaned):
