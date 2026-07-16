@@ -86,6 +86,14 @@ audio {
   display: block;
 }
 
+.anki-md-preview > * {
+  margin: 0;
+}
+
+.anki-md-preview > * + * {
+  margin-top: 1em;
+}
+
 /* ── Native Toolbar Auto-Hide ─────────────────────────────────────────── */
 
 .anki-md-active .anki-md-native-format-group > *:not(.anki-md-custom-btn):not(.anki-md-audio-split-group) {

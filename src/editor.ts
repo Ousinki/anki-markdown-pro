@@ -84,7 +84,17 @@ async function setPlainText(val: boolean): Promise<void> {
 
 // Set a CodeMirror option on all plain-text inputs
 async function setOption(key: string, value: unknown): Promise<void> {
-  await Promise.all(plainTexts.map((pt) => pt.codeMirror.setOption(key, value)));
+  await Promise.all(
+    plainTexts.map((pt) => {
+      try {
+        if (pt && pt.codeMirror) {
+          return pt.codeMirror.setOption(key, value);
+        }
+      } catch (e) {
+        console.warn("AnkiMD: Failed to set option on input:", e);
+      }
+    })
+  );
 }
 
 // Ensure MathJax is loaded
@@ -125,7 +135,7 @@ function updatePreview(container: HTMLElement) {
     }
   }
 
-  preview.innerHTML = renderPreview(source || "");
+  preview.innerHTML = renderPreview(source || "", preview);
 
   const mj = (globalThis as any).MathJax;
   if (mj?.typesetPromise) {
@@ -144,14 +154,33 @@ function updatePreview(container: HTMLElement) {
 
 function updateContainerHeight(container: HTMLElement, preview: HTMLElement) {
   if (!preview.classList.contains("visible")) return;
-  // Briefly remove limits so scrollHeight can accurately reflect content, not the current clip
-  container.style.maxHeight = "";
-  container.style.minHeight = "";
   
-  const h = preview.scrollHeight;
+  // Briefly remove the bottom constraint so preview can collapse to its natural content height
+  const oldBottom = preview.style.bottom;
+  preview.style.bottom = "auto";
+  
+  const h = preview.offsetHeight;
+  
+  // Restore the bottom constraint
+  preview.style.bottom = oldBottom;
   if (h > 0) {
-    container.style.minHeight = h + "px";
-    container.style.maxHeight = h + "px";
+    const computed = window.getComputedStyle(container);
+    const boxSizing = computed.boxSizing;
+    let targetHeight = h;
+    
+    if (boxSizing === "border-box") {
+      const borderTop = parseFloat(computed.borderTopWidth) || 0;
+      const borderBottom = parseFloat(computed.borderBottomWidth) || 0;
+      targetHeight = h + borderTop + borderBottom;
+    } else {
+      const paddingTop = parseFloat(computed.paddingTop) || 0;
+      const paddingBottom = parseFloat(computed.paddingBottom) || 0;
+      // Note: H - padding is needed if height doesn't include padding
+      targetHeight = h - paddingTop - paddingBottom;
+    }
+    
+    container.style.minHeight = targetHeight + "px";
+    container.style.maxHeight = targetHeight + "px";
     container.style.overflow = "hidden";
   }
 }
@@ -798,6 +827,16 @@ function attachPreviewTo(container: HTMLElement, cm5?: any) {
   });
   resizeObs.observe(container);
 
+  // Handle DOM changes inside preview (e.g. Shiki upgrading code blocks asynchronously)
+  const mutObs = new MutationObserver((mutations) => {
+    // Ignore mutations triggered by updateContainerHeight itself
+    const isOnlySelfAttributes = mutations.every(m => m.target === preview && m.type === "attributes");
+    if (isOnlySelfAttributes) return;
+    
+    updateContainerHeight(container, preview);
+  });
+  mutObs.observe(preview, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['style', 'class'] });
+
   // Click on preview → focus the CodeMirror editor
   preview.addEventListener("mousedown", (e) => {
     // If clicking on a replay-button or inside one, play the sound and block edit mode transitions
@@ -856,6 +895,7 @@ function attachPreviewTo(container: HTMLElement, cm5?: any) {
 
 /** Attach preview once CM5 is truly ready via editor Promise. */
 function attachWhenReady(api: PlainTextInputAPI) {
+  if (!api || !api.codeMirror) return;
   api.codeMirror.editor
     .then((cm5: any) => {
       if (!active()) return;
@@ -964,19 +1004,38 @@ function removeNavListener() {
 globalThis.ankiMdActivate = async () => {
   await loaded;
   document.body.classList.add("anki-md-active");
-  for (const fn of settings) globalThis[fn](false);
+  for (const fn of settings) {
+    try {
+      globalThis[fn](false);
+    } catch (e) {}
+  }
   await setPlainText(true);
-  await setOption("mode", "htmlmixed");
+  try {
+    await setOption("mode", "htmlmixed");
+  } catch (e) {}
   ensureMathJax();
   startDomObserver();
+  
+  injectMarkdownToolbar();
+  setTimeout(injectMarkdownToolbar, 50);
+  setTimeout(injectMarkdownToolbar, 200);
+  
   installNavListener();
-  for (const pt of plainTexts) attachWhenReady(pt);
+  for (const pt of plainTexts) {
+    try {
+      attachWhenReady(pt);
+    } catch (e) {}
+  }
 };
 
 globalThis.ankiMdDeactivate = async () => {
   await loaded;
   document.body.classList.remove("anki-md-active");
-  for (const fn of settings) globalThis[fn](true);
+  for (const fn of settings) {
+    try {
+      globalThis[fn](true);
+    } catch (e) {}
+  }
   await setPlainText(false);
   stopDomObserver();
   detachAllPreviews();
@@ -993,6 +1052,10 @@ loaded.then(() => {
   }
   const orig = globalThis.setPlainTexts;
   globalThis.setPlainTexts = (vals: boolean[]) => orig(active() ? vals.map(() => true) : vals);
+  
+  if (navigator.clipboard) {
+    document.body.classList.add("clipboard");
+  }
 });
 
 lifecycle.onMount((api: PlainTextInputAPI) => {
